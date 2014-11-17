@@ -27,6 +27,7 @@ Changes.
 #include <setjmp.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "yalibnkf.h"
 
 #undef getc
 #undef ungetc
@@ -59,7 +60,7 @@ static int
 yalibnkf_ungetc(int c, FILE *f)
 {
   if (yalibnkf_icount--){
-    *(--yalibnkf_iptr) = c;
+    *(--yalibnkf_iptr) = (unsigned char)c;
     return c;
   }else{ return EOF; }
 }
@@ -75,7 +76,7 @@ yalibnkf_putchar(int c)
   }
 
   if (yalibnkf_ocount--){
-    *yalibnkf_optr++ = c;
+    *yalibnkf_optr++ = (unsigned char)c;
   }else{
     size = yalibnkf_obufsize + yalibnkf_obufsize;
     p = (unsigned char *)realloc(yalibnkf_outbuf, size + 1);
@@ -84,7 +85,7 @@ yalibnkf_putchar(int c)
     yalibnkf_optr = yalibnkf_outbuf + yalibnkf_obufsize;
     yalibnkf_ocount = yalibnkf_obufsize;
     yalibnkf_obufsize = size;
-    *yalibnkf_optr++ = c;
+    *yalibnkf_optr++ = (unsigned char)c;
     yalibnkf_ocount--;
   }
 }
@@ -93,17 +94,17 @@ yalibnkf_putchar(int c)
 #include "nkf/utf8tbl.c"
 #include "nkf/nkf.c"
 
-const char *
-yalibnkf_convert(unsigned char* str, int strlen, char* opts, int optslen)
+const unsigned char *
+yalibnkf_convert(unsigned char* str, int strlen, unsigned char* opts)
 {
-  const char *ret;
+  const unsigned char *ret;
 
   if (yalibnkf_outbuf != NULL) {
     return NULL;
   }
 
   yalibnkf_ibufsize = strlen + 1;
-  yalibnkf_obufsize = yalibnkf_ibufsize * 1.5 + 256;
+  yalibnkf_obufsize = yalibnkf_ibufsize * 3 / 2 + 256;
   yalibnkf_outbuf = (unsigned char *)malloc(yalibnkf_obufsize);
   if (yalibnkf_outbuf == NULL){
     return NULL;
@@ -154,7 +155,7 @@ yalibnkf_convert_guess(unsigned char* str, int strlen)
 void
 yalibnkf_free(const char *str)
 {
-    free(str);
+    free((void *)str);
 }
 
 const char *

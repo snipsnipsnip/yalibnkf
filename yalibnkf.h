@@ -7,12 +7,12 @@ extern "C" {
 
 /**
  * Performs conversion on string str of strlen bytes with NKF.
- * Specify option with string option with of optslen bytes.
+ * Specify option with string opts.
  * You must free returned string with yalibnkf_free().
  * Thread unsafe.
 */
-const char *
-yalibnkf_convert(unsigned char* str, int strlen, char* opts, int optslen);
+const unsigned char *
+yalibnkf_convert(unsigned char* str, int strlen, unsigned char* opts);
 
 /**
  * Guess encoding of string str of strlen bytes with NKF.
