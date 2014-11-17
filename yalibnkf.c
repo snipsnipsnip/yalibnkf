@@ -136,7 +136,7 @@ yalibnkf_convert(unsigned char* str, int strlen, unsigned char* opts)
 }
 
 const char *
-yalibnkf_convert_guess(unsigned char* str, int strlen)
+yalibnkf_guess(unsigned char* str, int strlen)
 {
   yalibnkf_ibufsize = strlen + 1;
   yalibnkf_icount = 0;

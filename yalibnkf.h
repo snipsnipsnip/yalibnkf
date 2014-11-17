@@ -20,7 +20,7 @@ yalibnkf_convert(unsigned char* str, int strlen, unsigned char* opts);
  * Thread unsafe.
 */
 const char *
-yalibnkf_convert_guess(unsigned char* str, int strlen);
+yalibnkf_guess(unsigned char* str, int strlen);
 
 /**
  * Frees string returned from yalibnkf_convert().
