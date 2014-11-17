@@ -1,0 +1,3 @@
+[submodule "nkf"]
+	path = nkf
+	url = git://git.sourceforge.jp/gitroot/nkf/nkf.git
