@@ -150,3 +150,9 @@ yalibnkf_convert_guess(unsigned char* str, int strlen)
 
   return get_guessed_code();
 }
+
+void
+yalibnkf_free(const char *str)
+{
+    free(str);
+}
