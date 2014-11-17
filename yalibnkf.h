@@ -28,6 +28,12 @@ yalibnkf_convert_guess(unsigned char* str, int strlen);
 void
 yalibnkf_free(const char *str);
 
+/**
+ * Returns version.
+ */
+const char *
+yalibnkf_version(void);
+
 #ifdef __cplusplus
 }
 #endif

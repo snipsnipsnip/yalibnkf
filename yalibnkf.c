@@ -156,3 +156,9 @@ yalibnkf_free(const char *str)
 {
     free(str);
 }
+
+const char *
+yalibnkf_version(void)
+{
+    return "yalibnkf 0.0.0 based on nkf " NKF_VERSION " (" NKF_RELEASE_DATE ")";
+}
