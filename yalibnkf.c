@@ -163,5 +163,6 @@ yalibnkf_free(const char *str)
 const char *
 yalibnkf_version(void)
 {
-    return "yalibnkf 0.0.0 based on nkf " NKF_VERSION " (" NKF_RELEASE_DATE ")";
+    return "yalibnkf 0.0.0 based on Network Kanji Filter Version "
+      NKF_VERSION " (" NKF_RELEASE_DATE ") \n" COPY_RIGHT;
 }
