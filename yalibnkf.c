@@ -1,6 +1,8 @@
 /*
-  yalibnkf.c
-  based on Python Interface to NKF
+  yalibnkf
+  Based on Python Interface to NKF
+  Licensed under MIT (New BSD) License
+  2014, snipsnipsnip <snipsnipsnip@users.sourceforge.jp>
 */
 /*
 Changes.
