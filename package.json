@@ -1,0 +1,9 @@
+{
+  "name": "yalibnkf",
+  "version": "0.0.0",
+  "repo": "snipsnipsnip/yalibnkf",
+  "description": "Yet another wrapper functions for NKF: yet another kanji code converter",
+  "keywords": ["encoding", "nkf"],
+  "license": "MIT",
+  "src": ["yalibnkf.c", "yalibnkf.h", "nkf/config.h", "nkf/nkf.c", "nkf/nkf.h", "nkf/utf8tbl.c", "nkf/utf8tbl.h"]
+}
