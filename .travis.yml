@@ -1,0 +1,6 @@
+language: c
+script: "make test && make perl && make python2"
+
+branches:
+  only:
+    - master
