@@ -126,13 +126,15 @@ Copyright (C) 1996-2013, The nkf Project.
 License
 =======
 
-Zlib license.
+This repository contains contents released under several different licenses.
 
-```
-Files in nkf/ directory:
-Copyright (c) 1987, Fujitsu LTD. (Itaru ICHIKAWA).
-Copyright (c) 1996-2013, The nkf Project.
-
-Other files:
-Copyright (c) 2014, snipsnipsnip
-```
+* Original NKF: Zlib license.
+ * Copyright (c) 1987, Fujitsu LTD. (Itaru ICHIKAWA).
+ * Copyright (c) 1996-2013, The nkf Project.
+* yalibnkf.c: BSD License.
+ * Copyright (c) 2005 Matsumoto, Tadashi
+ * Copyright (c) 2014, snipsnipsnip
+* tools/amalgamator.py: MIT license.
+ * Copyright (c) 2014, snipsnipsnip
+* Other files: Zlib license.
+ * Copyright (c) 2014, snipsnipsnip
