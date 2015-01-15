@@ -1,3 +1,5 @@
+The BSD License.
+
 This repository contains contents released under several different licenses.
 
 Original NKF: Zlib license.
@@ -31,7 +33,7 @@ yalibnkf.c: BSD License.
   yalibnkf
   Based on Python Interface to NKF
   Licensed under MIT (New BSD) License
-  2014, snipsnipsnip <snipsnipsnip@users.sourceforge.jp>
+  2014-2015, snipsnipsnip <snipsnipsnip@users.sourceforge.jp>
 */
 
 /**  Python Interface to NKF
@@ -50,7 +52,7 @@ yalibnkf.c: BSD License.
 
 Other files: Zlib license.
 
-Copyright (c) 2014, snipsnipsnip <snipsnipsnip@users.sourceforge.jp>
+Copyright (c) 2014-2015, snipsnipsnip <snipsnipsnip@users.sourceforge.jp>
 
 This software is provided 'as-is', without any express or implied
 warranty.  In no event will the authors be held liable for any damages
