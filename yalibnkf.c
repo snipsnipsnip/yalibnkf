@@ -32,47 +32,35 @@ Changes.
 #include "yalibnkf.h"
 
 #undef getc
-#undef ungetc
 #define getc(f)         yalibnkf_getc(f)         
-#define ungetc(c,f)     yalibnkf_ungetc(c,f)
 
 #undef putchar
 #undef TRUE
 #undef FALSE
 #define putchar(c)      yalibnkf_putchar(c)
 
-static int yalibnkf_ibufsize, yalibnkf_obufsize;
-static unsigned char *yalibnkf_inbuf, *yalibnkf_outbuf;
-static int yalibnkf_icount,yalibnkf_ocount;
-static unsigned char *yalibnkf_iptr, *yalibnkf_optr;
+static size_t yalibnkf_ibufsize, yalibnkf_obufsize;
+static const char *yalibnkf_inbuf;
+static char *yalibnkf_outbuf;
+static size_t yalibnkf_icount,yalibnkf_ocount;
+static char *yalibnkf_optr;
 static jmp_buf env;
 static int yalibnkf_guess_flag;
+static size_t yalibnkf_writecount;
 
 static int 
 yalibnkf_getc(FILE *f)
 {
   unsigned char c;
   if (yalibnkf_icount >= yalibnkf_ibufsize) return EOF;
-  c = *yalibnkf_iptr++;
+  c = yalibnkf_inbuf[yalibnkf_icount];
   yalibnkf_icount++;
   return (int)c;
-}
-
-static int 
-yalibnkf_ungetc(int c, FILE *f)
-{
-  if (yalibnkf_icount--){
-    *(--yalibnkf_iptr) = (unsigned char)c;
-    return c;
-  }else{ return EOF; }
 }
 
 static void
 yalibnkf_putchar(int c)
 {
-  size_t size;
-  unsigned char *p;
-
   if (yalibnkf_guess_flag) {
     return;
   }
@@ -80,9 +68,9 @@ yalibnkf_putchar(int c)
   if (yalibnkf_ocount--){
     *yalibnkf_optr++ = (unsigned char)c;
   }else{
-    size = yalibnkf_obufsize + yalibnkf_obufsize;
-    p = (unsigned char *)realloc(yalibnkf_outbuf, size + 1);
-    if (yalibnkf_outbuf == NULL){ longjmp(env, 1); }
+    size_t size = yalibnkf_obufsize + yalibnkf_obufsize;
+    char *p = (char *)realloc(yalibnkf_outbuf, size + 1);
+    if (p == NULL){ longjmp(env, 1); }
     yalibnkf_outbuf = p;
     yalibnkf_optr = yalibnkf_outbuf + yalibnkf_obufsize;
     yalibnkf_ocount = yalibnkf_obufsize;
@@ -90,60 +78,64 @@ yalibnkf_putchar(int c)
     *yalibnkf_optr++ = (unsigned char)c;
     yalibnkf_ocount--;
   }
+  yalibnkf_writecount++;
 }
 
 #define PERL_XS 1
+#define DEFAULT_CODE_JIS
 #include "nkf/utf8tbl.c"
 #include "nkf/nkf.c"
 
-const unsigned char *
-yalibnkf_convert(unsigned char* str, int strlen, unsigned char* opts)
+struct yalibnkf_result_t
+yalibnkf_convert(const char *str, size_t strlen, const char *opts)
 {
-  const unsigned char *ret;
+  struct yalibnkf_result_t ret;
+  ret.len = 0;
+  ret.str = NULL;
 
   if (yalibnkf_outbuf != NULL) {
-    return NULL;
+    return ret;
   }
 
-  yalibnkf_ibufsize = strlen + 1;
+  yalibnkf_ibufsize = strlen;
   yalibnkf_obufsize = yalibnkf_ibufsize * 3 / 2 + 256;
-  yalibnkf_outbuf = (unsigned char *)malloc(yalibnkf_obufsize);
+  yalibnkf_outbuf = (char *)malloc(yalibnkf_obufsize);
   if (yalibnkf_outbuf == NULL){
-    return NULL;
+    return ret;
   }
   yalibnkf_outbuf[0] = '\0';
   yalibnkf_ocount = yalibnkf_obufsize;
   yalibnkf_optr = yalibnkf_outbuf;
   yalibnkf_icount = 0;
+  yalibnkf_writecount = 0;
   yalibnkf_inbuf  = str;
-  yalibnkf_iptr = yalibnkf_inbuf;
   yalibnkf_guess_flag = 0;
 
   if (setjmp(env) == 0){
     reinit();
-    options(opts);
-
-    kanji_convert(NULL);
-
+    
+    if (options((unsigned char *)opts) != 0 || kanji_convert(NULL) != 0) {
+      return ret;
+    }
   }else{
     free(yalibnkf_outbuf);
-    return NULL;
+    return ret;
   }
 
-  *yalibnkf_optr = 0;
-  ret = yalibnkf_outbuf;
+  ret.len = yalibnkf_writecount;
+  ret.str = yalibnkf_outbuf;
+
   yalibnkf_outbuf = NULL;
 
   return ret;
 }
 
 const char *
-yalibnkf_guess(unsigned char* str, int strlen)
+yalibnkf_guess(const char *str, size_t strlen)
 {
-  yalibnkf_ibufsize = strlen + 1;
+  yalibnkf_ibufsize = strlen;
   yalibnkf_icount = 0;
   yalibnkf_inbuf  = str;
-  yalibnkf_iptr = yalibnkf_inbuf;
 
   yalibnkf_guess_flag = 1;
   reinit();
@@ -155,9 +147,9 @@ yalibnkf_guess(unsigned char* str, int strlen)
 }
 
 void
-yalibnkf_free(const char *str)
+yalibnkf_free(struct yalibnkf_result_t result)
 {
-    free((void *)str);
+    free((void *)result.str);
 }
 
 const char *

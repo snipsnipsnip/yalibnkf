@@ -1,6 +1,6 @@
-The zlib license.
+This repository contains contents released under several different licenses.
 
-For source files under under nkf/ directory:
+Original NKF: Zlib license.
 
 /*
  * Copyright (c) 1987, Fujitsu LTD. (Itaru ICHIKAWA).
@@ -25,7 +25,30 @@ For source files under under nkf/ directory:
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-For other files:
+yalibnkf.c: BSD License.
+
+/*
+  yalibnkf
+  Based on Python Interface to NKF
+  Licensed under MIT (New BSD) License
+  2014, snipsnipsnip <snipsnipsnip@users.sourceforge.jp>
+*/
+
+/**  Python Interface to NKF
+***************************************************************************
+**  Copyright (c) 2005 Matsumoto, Tadashi <ma2@city.plala.jp>
+**  All Rights Reserved.
+**
+**    Everyone is permitted to do anything on this program
+**    including copying, modifying, improving,
+**    as long as you don't try to pretend that you wrote it.
+**    i.e., the above copyright notice has to appear in all copies.
+**    Binary distribution requires original version messages.
+**    You don't have to ask before copying, redistribution or publishing.
+**    THE AUTHOR DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE.
+***************************************************************************/
+
+Other files: Zlib license.
 
 Copyright (c) 2014, snipsnipsnip <snipsnipsnip@users.sourceforge.jp>
 

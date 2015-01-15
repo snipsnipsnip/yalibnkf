@@ -29,3 +29,6 @@
 *.hex
 
 yalibnkf_amalgamated.c
+test/test_cases.inc
+cmake/
+!cmake/CMakeLists.txt
