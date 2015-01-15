@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-project(yalibnkf)
+project(yalibnkf C CXX)
 
 ### Common stuff
 
@@ -9,13 +9,34 @@ get_filename_component(ROOT "${CMAKELISTDIR}" PATH)
 find_program(PERL perl)
 find_program(PYTHON python)
 
+### Compiler flags
+
 include_directories("${ROOT}" "${ROOT}/nkf" "${ROOT}/test")
 
 if(MSVC)
-  set(CMAKE_CXX_FLAGS /EHsc)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /EHsc")
+
+  if(CMAKE_CXX_FLAGS MATCHES "/W[0-4]")
+    string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+  else()
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /W4")
+  endif()
+
+  if(CMAKE_C_FLAGS MATCHES "/W[0-4]")
+    string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
+  else()
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /W4")
+  endif()
+
+  # suppress warnings in nkf.c
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd4127 /wd4702 /wd4100 /wd4245")
+else()
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -pedantic")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -pedantic")
 endif()
 
-ADD_DEFINITIONS(-DYALIBNKF_BUILDING)
+add_definitions(-DYALIBNKF_BUILDING)
 
 ### Static Library
 
@@ -38,8 +59,6 @@ install(TARGETS yalibnkf DESTINATION bin)
 
 enable_testing()
 
-add_custom_target(testcases "${ROOT}/test/test_cases.inc")
-
 # internal version: loads test data from C arrays
 add_executable(yalibnkf_test_internal "${ROOT}/test/test_internal.cpp" "${ROOT}/test/test_cases.inc")
 target_link_libraries(yalibnkf_test_internal yalibnkf_static)
@@ -52,7 +71,7 @@ add_executable(yalibnkf_test_external "${ROOT}/test/test_external.cpp" "${ROOT}/
 target_link_libraries(yalibnkf_test_external yalibnkf_static)
 add_test(
   NAME test_external
-  COMMAND ${PERL} "${ROOT}/tools/pipe_test.pl" "$<TARGET_FILE:yalibnkf_test_external>" "${ROOT}/test_cases.inc")
+  COMMAND ${PERL} "${ROOT}/tools/pipe_test.pl" "$<TARGET_FILE:yalibnkf_test_external>" "${ROOT}/test/test_cases.inc")
 
 ### Generated files
 

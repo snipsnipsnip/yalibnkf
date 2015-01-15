@@ -37,7 +37,7 @@ int main(int argc, char **argv)
   std::string options = make_options(argc, argv);
   std::vector<char> input = slurp();
 
-  yalibnkf_result_t result = yalibnkf_convert(&input[0], input.size(), options.c_str());
+  yalibnkf_str result = yalibnkf_convert(&input[0], input.size(), options.c_str());
   
   if (result.str == NULL) {
     fprintf(stderr, "<yalibnkf/test_main.c: failed to convert>\n");

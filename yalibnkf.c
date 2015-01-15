@@ -2,7 +2,7 @@
   yalibnkf
   Based on Python Interface to NKF
   Licensed under MIT (New BSD) License
-  2014, snipsnipsnip <snipsnipsnip@users.sourceforge.jp>
+  2014-2015, snipsnipsnip <snipsnipsnip@users.sourceforge.jp>
 */
 /*
 Changes.
@@ -32,7 +32,7 @@ Changes.
 #include "yalibnkf.h"
 
 #undef getc
-#define getc(f)         yalibnkf_getc(f)         
+#define getc(f)         yalibnkf_getc(f)
 
 #undef putchar
 #undef TRUE
@@ -48,7 +48,7 @@ static jmp_buf env;
 static int yalibnkf_guess_flag;
 static size_t yalibnkf_writecount;
 
-static int 
+static int
 yalibnkf_getc(FILE *f)
 {
   unsigned char c;
@@ -86,10 +86,45 @@ yalibnkf_putchar(int c)
 #include "nkf/utf8tbl.c"
 #include "nkf/nkf.c"
 
-struct yalibnkf_result_t
+/**
+ * Split opts with space character and feed to nkf's option().
+ * We need to handle space-delimited option one by one since nkf's handling
+ * seems buggy.
+ */
+static int load_nkf_options(const char *opts)
+{
+  size_t len = strlen(opts);
+  unsigned char *optchunk = (unsigned char *)malloc(len + 1);
+  size_t i = 0;
+
+  if (optchunk == NULL) {
+    return -1;
+  }
+
+  while (i < len) {
+    size_t skip = strcspn(&opts[i], " ");
+
+    if (skip > 0) {
+      memcpy(optchunk, &opts[i], skip);
+      optchunk[skip] = '\0';
+
+      if (options(optchunk) != 0) {
+        free(optchunk);
+        return -1;
+      }
+    }
+    i += skip + strspn(&opts[i + skip], " ");
+  }
+
+  free(optchunk);
+
+  return 0;
+}
+
+struct yalibnkf_str
 yalibnkf_convert(const char *str, size_t strlen, const char *opts)
 {
-  struct yalibnkf_result_t ret;
+  struct yalibnkf_str ret;
   ret.len = 0;
   ret.str = NULL;
 
@@ -113,8 +148,8 @@ yalibnkf_convert(const char *str, size_t strlen, const char *opts)
 
   if (setjmp(env) == 0){
     reinit();
-    
-    if (options((unsigned char *)opts) != 0 || kanji_convert(NULL) != 0) {
+
+    if (load_nkf_options(opts) != 0 || kanji_convert(NULL) != 0) {
       return ret;
     }
   }else{
@@ -147,14 +182,14 @@ yalibnkf_guess(const char *str, size_t strlen)
 }
 
 void
-yalibnkf_free(struct yalibnkf_result_t result)
+yalibnkf_free(struct yalibnkf_str result)
 {
-    free((void *)result.str);
+  free((void *)result.str);
 }
 
 const char *
 yalibnkf_version(void)
 {
-    return "yalibnkf 0.0.0 based on Network Kanji Filter Version "
-      NKF_VERSION " (" NKF_RELEASE_DATE ") \n" COPY_RIGHT;
+  return "yalibnkf 0.0.0 based on Network Kanji Filter Version "
+    NKF_VERSION " (" NKF_RELEASE_DATE ") \n" COPY_RIGHT;
 }

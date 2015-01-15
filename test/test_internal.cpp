@@ -1,131 +1,69 @@
 #include <stdio.h>
-#include <stdarg.h>
 #include <string.h>
 #include <ctype.h>
 #include <vector>
-#include <utility>
+#include <string>
 #include <algorithm>
 #include "yalibnkf.h"
 
-class Test
+struct TestResult
 {
-    int case_count_;
-    int error_count_;
-    int last_case_count_;
-    int last_error_count_;
+    bool ok;
+    std::vector<std::string> expected;
+    std::string actual;
+};
+
+class TestCase
+{
+    const char *nkf_option_;
+    std::string input_;
+    std::vector<std::string> answers_;
 
 public:
-    Test()
+    TestCase(const char *nkf_option, const std::string &input, const std::vector<std::string> &answers)
       :
-      case_count_(0),
-      error_count_(0),
-      last_case_count_(0),
-      last_error_count_(0)
+      nkf_option_(nkf_option),
+      input_(input),
+      answers_(answers)
     {
     }
 
-    int error_count()
+    void add_answer(const std::string &answer)
     {
-        return error_count_;
+        answers_.emplace_back(answer);
     }
 
-    void run()
+    TestResult run() const
     {
-#include "test_cases.inc"
-        report_result();
+        yalibnkf_str result = yalibnkf_convert(input_.c_str(), input_.size(), nkf_option_);
+        std::string actual { result.str, result.len };
+
+        return { matches_answer(actual), answers_, actual };
     }
 
 private:
-    void description(const char *message)
+    bool matches_answer(std::string actual) const
     {
-        report_result();
-        printf("%-40s", message);
-    }
-    
-    void report_result()
-    {
-        if (case_count_ == last_case_count_)
+        bool tolerant = need_to_ignore_spaces(nkf_option_);
+
+        if (tolerant)
         {
-            printf("\n");
-        }
-        else if (last_error_count_ == error_count_)
-        {
-            puts("Ok");
-        }
-        
-        last_case_count_ = case_count_;
-        last_error_count_ = error_count_;
-    }
-
-    typedef std::pair<size_t, const char *> Answer;
-    typedef std::vector<Answer> Answers;
-
-    void testcase(const char *nkf_options,
-                  size_t input_length, const char *input,
-                  size_t answer_length, const char *answer,
-                  int num_alternative_answers, ...)
-    {
-        va_list ap;
-        Answers answers(num_alternative_answers + 1);
-
-        answers[0] = Answer(answer_length, answer);
-
-        va_start(ap, num_alternative_answers);
-        for (int i = 0; i < num_alternative_answers; i++)
-        {
-            answers[i + 1].first = va_arg(ap, size_t);
-            answers[i + 1].second = va_arg(ap, const char *);
-        }
-        va_end(ap);
-
-        yalibnkf_result_t result = yalibnkf_convert(input, input_length, nkf_options);
-
-        if (need_to_ignore_spaces(nkf_options))
-        {
-            assert_nearly_equal(answers, result);
-        }
-        else
-        {
-            assert_equal(answers, result);
+            strip(&actual);
         }
 
-        yalibnkf_free(result);
-        case_count_++;
-    }
-
-    void assert_equal(const Answers &answers, const yalibnkf_result_t &actual)
-    {
-        for (Answers::const_iterator i = answers.begin(); i != answers.end(); ++i)
+        return std::any_of(answers_.begin(), answers_.end(), [=](std::string answer)
         {
-            const Answer &expected = *i;
-
-            if (actual.len == expected.first && memcmp(actual.str, expected.second, actual.len) == 0)
+            if (tolerant)
             {
-                return;
+                strip(&answer);
             }
-        }
 
-        fprintf(stdout, "Fail\n  expected: ");
-        dumpstr(answers[0].first, answers[0].second);
-        fprintf(stdout, "\n  actual: ");
-        dumpstr(actual.len, actual.str);
-        fprintf(stdout, "\n");
-
-        error_count_++;
-    }
-    
-    void dumpstr(size_t len, const char *str)
-    {
-        putc('"', stdout);
-        for (size_t i = 0; i < len; i++)
-        {
-            fprintf(stdout, "\\%03o", (unsigned char)str[i]);
-        }
-        putc('"', stdout);
+            return actual == answer;
+        });
     }
 
     /** !!($nkf_options =~ /-\w+m[NS]/) */
-    bool need_to_ignore_spaces(const char *nkf_options)
+    static bool need_to_ignore_spaces(const char *nkf_options)
     {
         for (const char *p = nkf_options; (p = strchr(p, '-')) != NULL;)
         {
@@ -142,59 +80,245 @@ private:
         return false;
     }
 
-    /** Compares result ignoring spaces. */
-    void assert_nearly_equal(const Answers &answers, const yalibnkf_result_t &actual)
+    static void strip(std::string *s)
     {
-        std::vector<char> stripped_actual = strip(actual.str, actual.len);
+        s->erase(std::remove_if(s->begin(), s->end(), [](char c) { return c == ' '; }), s->end());
+    }
+};
 
-        for (Answers::const_iterator i = answers.begin(); i != answers.end(); ++i)
+class TestBundle
+{
+    std::vector<std::string> description_;
+    std::vector<TestCase> cases_;
+
+public:
+    const std::vector<std::string> &get_description() const
+    {
+        return description_;
+    }
+
+    void set_description(const std::vector<std::string> &desc)
+    {
+        description_.assign(desc.begin(), desc.end());
+    }
+
+    void add_input(const char *nkf_option, const std::string &input)
+    {
+        cases_.emplace_back(TestCase { nkf_option, input, {} });
+    }
+
+    void add_answer(const std::string &answer)
+    {
+        ensure(!cases_.empty());
+        cases_.back().add_answer(answer);
+    }
+
+    TestResult run() const
+    {
+        for (auto i = cases_.begin(); i != cases_.end(); ++i)
         {
-            std::vector<char> stripped_expected = strip(i->second, i->first);
-
-            if (stripped_actual == stripped_expected)
+            TestResult result = i->run();
+            
+            if (!result.ok)
             {
-                return;
+                return result;
             }
         }
-
-        error_count_++;
+        
+        return {true, {{"<shouldn't be printed>"}}, {"<shouldn't be printed>"}};
     }
 
-    std::vector<char> strip(const char *str, size_t len)
+private:
+    void ensure(bool cond)
     {
-        std::vector<char> stripped(str, str + len);
+        if (!cond)
+        {
+            throw std::runtime_error("unexpected state");
+        }
+    }
+};
 
-        stripped.erase(std::remove_if(stripped.begin(), stripped.end(), is_space), stripped.end());
+typedef std::vector<TestBundle> Test;
 
-        return stripped;
+class TestLoader
+{
+    Test test_;
+    std::vector<std::string> description_;
+
+public:
+    Test load()
+    {
+#include "test_cases.inc"
+        ensure(description_.empty());
+        return test_;
     }
 
-    static bool is_space(char c)
+private:
+    void description(const char *message)
     {
-        return c == ' ';
+        description_.emplace_back(message);
+    }
+
+    void test_input(const char *nkf_options, size_t input_length, const char *input)
+    {
+        if (!description_.empty())
+        {
+            test_.resize(test_.size() + 1);
+            test_.back().set_description(std::move(description_));
+            description_.clear();
+        }
+
+        ensure(!test_.empty());
+        test_.back().add_input(nkf_options, std::string(input, input_length));
+    }
+
+    void test_output(size_t answer_length, const char *answer)
+    {
+        ensure(!test_.empty());
+        test_.back().add_answer(std::string(answer, answer_length));
+    }
+
+    void ensure(bool cond)
+    {
+        if (!cond)
+        {
+            throw std::runtime_error("unexpected state");
+        }
+    }
+};
+
+class TestRunner
+{
+    int error_count_;
+    Test test_;
+    std::vector<std::string> labels_;
+
+public:
+    TestRunner(const Test &test, const std::vector<std::string> &labels)
+      :
+      error_count_(0),
+      test_(test),
+      labels_(labels)
+    {
+    }
+
+    int error_count()
+    {
+        return error_count_;
+    }
+
+    void run()
+    {
+        std::for_each(test_.begin(), test_.end(), [=](const TestBundle &test)
+        {
+            if (is_selected(test))
+            {
+                run_case(test);
+            }
+        });
+    }
+
+private:
+    bool is_selected(const TestBundle &test)
+    {
+        auto d = test.get_description();
+
+        return labels_.empty() || std::any_of(labels_.begin(), labels_.end(), [&](const std::string &label)
+        {
+            return std::any_of(d.begin(), d.end(), [&](const std::string &desc)
+            {
+                return desc.find(label) != std::string::npos;
+            });
+        });
+    }
+
+    void run_case(const TestBundle &test)
+    {
+        print_description(test);
+
+        TestResult result = test.run();
+
+        if (result.ok)
+        {
+            puts("Ok");
+        }
+        else
+        {
+            printf("Fail\n  expected: ");
+            for (auto i = result.expected.begin(); i != result.expected.end(); ++i)
+            {
+                if (i != result.expected.begin())
+                {
+                    printf("\n  or: ");
+                }
+                dumpstr(*i);
+            }
+            fprintf(stdout, "\n  actual: ");
+            dumpstr(result.actual);
+            fprintf(stdout, "\n");
+
+            error_count_++;
+        }
+    }
+
+    void print_description(const TestBundle &test)
+    {
+        const auto &lines = test.get_description();
+
+        for (auto i = lines.begin(); i != lines.end(); ++i)
+        {
+            if (i != lines.begin())
+            {
+                printf("\n");
+            }
+            printf("%-40s", i->c_str());
+        }
+    }
+
+    static void dumpstr(const std::string &str)
+    {
+        putc('"', stdout);
+        std::for_each(str.begin(), str.end(), [](char c)
+        {
+            fprintf(stdout, "\\%03o", (unsigned char)c);
+        });
+        putc('"', stdout);
     }
 };
 
 int main(int argc, char **argv)
 {
-    Test test;
-    test.run();
-
-    int error_count = test.error_count();
-
-    if (error_count > 1)
+    try
     {
-        printf("%d errors were found.\n", error_count);
+        TestRunner test { TestLoader().load(), { &argv[1], &argv[argc] } };
+        test.run();
+
+        int error_count = test.error_count();
+
+        if (error_count > 1)
+        {
+            printf("%d errors were found.\n", error_count);
+            return 1;
+        }
+        else if (error_count == 1)
+        {
+            printf("1 error was found.\n");
+            return 1;
+        }
+        else
+        {
+            printf("All tests are succeeded.\n");
+            return 0;
+        }
+    }
+    catch (const std::exception &e)
+    {
+        printf("Test has failed with exception: %s\n", e.what());
         return 1;
     }
-    else if (error_count == 1)
+    catch (...)
     {
-        printf("1 error was found.\n");
+        printf("Test has failed with some error.\n");
         return 1;
-    }
-    else
-    {
-        printf("All tests are succeeded.\n");
-        return 0;
     }
 }

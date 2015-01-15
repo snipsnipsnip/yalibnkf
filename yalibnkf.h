@@ -5,20 +5,22 @@
   yalibnkf
   Based on Python Interface to NKF
   Licensed under MIT (New BSD) License
-  2014, snipsnipsnip <snipsnipsnip@users.sourceforge.jp>
+  2014-2015, snipsnipsnip <snipsnipsnip@users.sourceforge.jp>
 */
 
 /* define YALIBNKF_DLL to use DLL */
-#ifdef YALIBNKF_DLL
-#  ifdef YALIBNKF_BUILDING
+#ifndef YALIBNKF_API
+#  ifdef YALIBNKF_DLL
+#    ifdef YALIBNKF_BUILDING
 /* We are building this library */
-#    define YALIBNKF_API __declspec(dllexport)
-#  else
+#      define YALIBNKF_API __declspec(dllexport)
+#    else
 /* We are using this library */
-#    define YALIBNKF_API __declspec(dllimport)
+#      define YALIBNKF_API __declspec(dllimport)
+#    endif
+#  else
+#    define YALIBNKF_API
 #  endif
-#else
-#  define YALIBNKF_API
 #endif
 
 #ifdef __cplusplus
@@ -26,29 +28,32 @@ extern "C" {
 #endif
 
 /**
- * Non '\0'-terminated string, which may include more than one '\0' bytes, with its length.
+ * NUL-terminated string with length.
+ * str may include more than one '\0' bytes before the end.
  * str may be NULL on failure.
  */
-struct yalibnkf_result_t
+typedef struct yalibnkf_str
 {
   char *str;
   size_t len;
-};
+}
+yalibnkf_str;
 
 /**
- * Performs conversion on string str of strlen bytes with NKF.
- * Specify option with string opts.
+ * Performs kanji-code conversion on string str of strlen bytes with NKF.
+ * Specify NKF option with string opts.
+ * This function allocates the string dynamically.
  * You must free returned string with yalibnkf_free().
- * Returns { 0, NULL } on error.
+ * Returns { 0, 0 } on error.
  * Thread unsafe.
 */
 YALIBNKF_API
-struct yalibnkf_result_t
+yalibnkf_str
 yalibnkf_convert(const char *str, size_t strlen, const char *opts);
 
 /**
  * Guess encoding of string str of strlen bytes with NKF.
- * You must not free returned string.
+ * Returns a static constant string.
  * Thread unsafe.
 */
 YALIBNKF_API
@@ -60,7 +65,7 @@ yalibnkf_guess(const char *str, size_t strlen);
  */
 YALIBNKF_API
 void
-yalibnkf_free(struct yalibnkf_result_t result);
+yalibnkf_free(struct yalibnkf_str result);
 
 /**
  * Returns version.
