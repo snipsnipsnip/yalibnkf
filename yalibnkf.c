@@ -122,7 +122,7 @@ static int load_nkf_options(const char *opts)
 }
 
 struct yalibnkf_str
-yalibnkf_convert(const char *str, size_t strlen, const char *opts)
+yalibnkf_convert(const char *opts, const char *str, size_t strlen)
 {
   struct yalibnkf_str ret;
   ret.len = 0;
