@@ -1,6 +1,7 @@
-The BSD License.
+The MIT License.
 
 This repository contains contents released under several different licenses.
+MIT License is stronger than Zlib License, so it should be MIT License as a whole.
 
 Original NKF: Zlib license.
 
@@ -27,7 +28,7 @@ Original NKF: Zlib license.
  * 3. This notice may not be removed or altered from any source distribution.
  */
 
-yalibnkf.c: BSD License.
+yalibnkf.c, yalibnkf.h: MIT License.
 
 /*
   yalibnkf

@@ -1,94 +1,79 @@
-yalibnkf v0.0.0 (nkf v2.1.3)
+yalibnkf
 ========
 
-Yet Another wrapper LIBrary for [NKF]( http://sourceforge.jp/projects/nkf/ ): yet another kanji code converter which ''converts input kanji code to designated kanji code such as ISO-2022-JP, Shift_JIS, EUC-JP, UTF-8, UTF-16 or UTF-32''.
+Yet Another wrapper LIBrary for [NKF]( http://sourceforge.jp/projects/nkf/ ): yet another kanji code converter which ''converts input kanji code to designated kanji code such as ISO-2022-JP, Shift_JIS, EUC-JP, UTF-8, UTF-16 or UTF-32."
 
-C言語のプログラムに組み込むための薄い[NKF]( http://sourceforge.jp/projects/nkf/ )のラッパーです。
+C言語のプログラムに組み込むための薄い[NKF]( http://sourceforge.jp/projects/nkf/ )のラッパーです。nkfを使うのと同様のオプションを指定して使えます。
 [clib]( https://github.com/clibs/clib/ )に対応しています。
 Python2のバインディングをほぼそのまま利用しました。スレッドセーフではありません。
 
-Installation
-========
+Example
+=======
 
-Install with [clib]( https://github.com/clibs/clib ).
+```c
+#include <stdio.h>
+#include "yalibnkf.h"
 
+int main(int argc, char **argv) {
+    char hoge[] = "=?ISO-2022-JP?B?GyRCJFskMhsoQg==?=";
+    yalibnkf_str result = yalibnkf_convert("-w16", hoge, sizeof(hoge) - 1);
+    
+    if (result == NULL) {
+        return 1;
+    }
+    
+    printf("hoge is \"%.*s\" in UTF16\n", result.len, result.str);
+    yalibnkf_free(result);
+    
+    return 0;
+}
 ```
+
+Build
+=====
+
+Build with [CMake]( http://cmake.org/ ) to get binary:
+
+* \*nix
+
+```console
+$ cd yalibnkf/cmake
+$ cmake -DCMAKE_INSTALL_PREFIX=binary -DCMAKE_BUILD_TYPE=Release -G "Unix Makefiles"
+$ cmake --build . --target install
+```
+
+* windows
+
+```console
+> cd yalibnkf/cmake
+> cmake -DCMAKE_INSTALL_PREFIX=binary -DCMAKE_BUILD_TYPE=Release -G "NMake Makefiles"
+> cmake --build . --target install
+```
+
+or use `cmake-gui`.
+
+Install
+=======
+
+You can just import source with [clib]( https://github.com/clibs/clib ):
+
+```console
 $ clib install snipsnipsnip/yalibnkf
 ```
 
-API
-===
+Test
+====
 
-yalibnkf_convert
-------
-
-```c
-/**
- * Performs conversion on string str of strlen bytes with NKF.
- * Specify option with string opts.
- * You must free returned string with yalibnkf_free().
- * Returns NULL on error.
- * Thread unsafe.
-*/
-const unsigned char *
-yalibnkf_convert(unsigned char* str, int strlen, unsigned char* opts);
+```console
+$ cd yalibnkf/cmake
+$ cmake --build .
+$ ctest -V
 ```
-
-長さstrlenバイトの文字列strをnkfにかけます。オプションはoptsで指定します。
-使用後はyalibnkf_free()で開放してください。
-失敗の際はNULLを返します。
-
-```c
-const char *result = yalibnkf_convert("=?ISO-2022-JP?B?GyRCJFskMhsoQg==?=", 34, "-w");
-if (result != NULL) { puts(result); }
-yalibnkf_free(result);
-```
-
-yalibnkf_guess
-------
-
-```c
-/**
- * Guess encoding of string str of strlen bytes with NKF.
- * You must not free returned string.
- * Thread unsafe.
-*/
-const char *
-yalibnkf_guess(unsigned char* str, int strlen);
-```
-
-文字列のエンコーディングを推測します。推測結果は文字列で返します。
-
-yalibnkf_free
-------
-
-```c
-/**
- * Frees string returned from yalibnkf_convert().
- */
-void
-yalibnkf_free(const char *str);
-```
-
-`yalibnkf_convert`の返す文字列のメモリを開放します。
-
-yalibnkf_version
-------
-
-```c
-/**
- * Returns version.
- */
-const char *
-yalibnkf_version(void);
-```
-
-バージョン情報を返します。
 
 Available Options
 =======
 
-nkf v2.1.3のusageを置いておきます。
+Here's usage of nkf v2.1.3.
 
 ```
 Usage:  nkf -[flags] [--] [in file] .. [out file for -O flag]
@@ -126,14 +111,18 @@ Copyright (C) 1996-2013, The nkf Project.
 License
 =======
 
+MIT license.
+
 This repository contains contents released under several different licenses.
+
+MIT License is stronger than Zlib License, so it should be MIT License as a whole.
 
 * Original NKF: Zlib license.
  * Copyright (c) 1987, Fujitsu LTD. (Itaru ICHIKAWA).
  * Copyright (c) 1996-2013, The nkf Project.
-* yalibnkf.c: BSD License.
+* yalibnkf.c: MIT License.
  * Copyright (c) 2005 Matsumoto, Tadashi
- * Copyright (c) 2014, snipsnipsnip
+ * Copyright (c) 2014-2015, snipsnipsnip
 * tools/amalgamator.py: MIT license.
  * Copyright (c) 2014, snipsnipsnip
 * Other files: Zlib license.
