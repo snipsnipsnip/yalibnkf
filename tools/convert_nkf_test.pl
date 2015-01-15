@@ -10,26 +10,26 @@ my $DESCRIPTION = <<'EOS';
   Implement following functions:
 
     void description(const char *message);
+    void test_input(const char *nkf_options, int input_length, const char *input);
+    void test_output(int answer_length, const char *answer);
 
-    void testcase(const char *nkf_options,
-                  int input_length, const char *input,
-                  int answer_length, const char *answer,
-                  int num_alternative_answers, ...);
-
-  testcase() must allow variable length arguments.
-  Number of arguments is 7 + num_alternative_answers * 2.
-  num_alternative_answers is followed by the length-string pairs repeating num_alternative_answers times.
-  String lengths are important since string data except nkf_options often
+  test_input() is followed by one or more calls of test_output().
+  String lengths are important since string data, except nkf_options, often
   contain one or more non-terminating '\0's.
 
   Example:
 
     description("`nkf -foo` must convert 'bar' into either 'hoge' or 'fuga'.");
-    testcase("-foo", 3, "bar", 4, "hoge", 1, 4, "fuga");
+    test_input("-foo", 3, "bar");
+    test_output(4, "hoge");
+    test_output(4, "fuga");
     description("`nkf -baz` must convert 'moga' into 'foge'.");
-    testcase("-baz", 3, "moga", 4, "foge", 0);
+    test_input("-baz", 3, "moga");
+    test_output(4, "foge");
 
-  Note: In original test.pl test runner, special treatmentspace letters (' ') in output and answers are ignored if $nkf_options matches regexp /-\w+m[NS]/.
+  Note: In original test.pl test runner, there are special treatments
+  if $nkf_options matches regexp /-\w+m[NS]/, in which case
+  space letters (' ') in output and answers are ignored.
 */
 EOS
 
@@ -61,12 +61,12 @@ sub translate_case {
   my $arg = quote(escape(strip($head)));
 
   if ($name =~ /\Atestcase\z/) {
-    my ($input, $answer, @alternative_answers) = map { length($_) . ', ' . quote(escape($_)); } @args;
+    my ($input, @answers) = map { length($_) . ', ' . quote(escape($_)); } @args;
 
-    $arg .= join(', ', '', $input, $answer, scalar(@alternative_answers), @alternative_answers);
+    join "\n", map { "$_->[0]($_->[1]);" } [test_input => "$arg, $input"], map { [test_output => $_] } @answers;
+  } else {
+    "$name($arg);";
   }
-
-  "$name($arg);";
 }
 
 sub quote {
@@ -74,15 +74,15 @@ sub quote {
 }
 
 sub escape {
-  my ($_) = @_;
-  s/[^\n\r0-9a-zA-Z]/sprintf '\%03o', ord $&/gse;
+  local ($_) = @_;
+  s/[^- \(\)\/_\[\]:=\n\ra-zA-Z]/sprintf '\%03o', ord $&/gse;
   s/\n/\\n/g;
   s/\r/\\r/g;
   $_;
 }
 
 sub strip {
-  my ($_) = @_;
+  local ($_) = @_;
   s/\A\s+|\s+\z//;
   $_;
 }
