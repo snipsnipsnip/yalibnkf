@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(yalibnkf C CXX)
 
+
 ### Common stuff
 
 get_filename_component(CMAKELISTDIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
@@ -43,9 +44,6 @@ add_definitions(-DYALIBNKF_BUILDING)
 add_library(yalibnkf_static STATIC "${ROOT}/yalibnkf_amalgamated.c")
 set_target_properties(yalibnkf_static PROPERTIES LINKER_LANGUAGE C)
 
-install(FILES "${ROOT}/yalibnkf.h" DESTINATION include)
-install(TARGETS yalibnkf_static DESTINATION lib)
-
 ### Dynamic library
 
 add_library(yalibnkf SHARED "${ROOT}/yalibnkf_amalgamated.c")
@@ -53,7 +51,19 @@ set_target_properties(yalibnkf PROPERTIES LINKER_LANGUAGE C)
 if(MSVC)
   set_target_properties(yalibnkf PROPERTIES COMPILE_FLAGS -DYALIBNKF_DLL)
 endif()
-install(TARGETS yalibnkf DESTINATION bin)
+
+### Installation
+
+install(
+  FILES "${ROOT}/yalibnkf.h"
+  DESTINATION include
+)
+install(
+  TARGETS yalibnkf yalibnkf_static
+  ARCHIVE DESTINATION lib
+  LIBRARY DESTINATION lib
+  RUNTIME DESTINATION bin
+)
 
 ### Test runners
 
