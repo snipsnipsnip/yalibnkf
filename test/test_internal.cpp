@@ -35,7 +35,7 @@ public:
 
     TestResult run() const
     {
-        yalibnkf_str result = yalibnkf_convert(input_.c_str(), input_.size(), nkf_option_);
+        yalibnkf_str result = yalibnkf_convert(nkf_option_, input_.c_str(), input_.size());
         std::string actual { result.str, result.len };
 
         return { matches_answer(actual), answers_, actual };

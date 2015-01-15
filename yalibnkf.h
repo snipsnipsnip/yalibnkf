@@ -49,7 +49,7 @@ yalibnkf_str;
 */
 YALIBNKF_API
 yalibnkf_str
-yalibnkf_convert(const char *str, size_t strlen, const char *opts);
+yalibnkf_convert(const char *opts, const char *str, size_t strlen);
 
 /**
  * Guess encoding of string str of strlen bytes with NKF.

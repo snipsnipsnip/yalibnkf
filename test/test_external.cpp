@@ -23,7 +23,7 @@ static std::vector<char> slurp()
   int c;
   
   while ((c = getchar()) != EOF) {
-    buf.push_back(c);
+    buf.push_back(char(c));
   }
   
   return buf;
@@ -37,7 +37,7 @@ int main(int argc, char **argv)
   std::string options = make_options(argc, argv);
   std::vector<char> input = slurp();
 
-  yalibnkf_str result = yalibnkf_convert(&input[0], input.size(), options.c_str());
+  yalibnkf_str result = yalibnkf_convert(options.c_str(), &input[0], input.size());
   
   if (result.str == NULL) {
     fprintf(stderr, "<yalibnkf/test_main.c: failed to convert>\n");
