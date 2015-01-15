@@ -1,10 +1,10 @@
-/* amalgamator.py: "yalibnkf.c" begin */
+﻿/* amalgamator.py: "yalibnkf.c" begin */
 /* amalgamator.py: line 1..31 of "yalibnkf.c" */
 /*
   yalibnkf
   Based on Python Interface to NKF
   Licensed under MIT (New BSD) License
-  2014, snipsnipsnip <snipsnipsnip@users.sourceforge.jp>
+  2014-2015, snipsnipsnip <snipsnipsnip@users.sourceforge.jp>
 */
 /*
 Changes.
@@ -32,7 +32,7 @@ Changes.
 #include <stdlib.h>
 #include <stdio.h>
 /* amalgamator.py: "yalibnkf.h" begin */
-/* amalgamator.py: line 1..50 of "yalibnkf.h" */
+/* amalgamator.py: line 1..82 of "yalibnkf.h" */
 #ifndef INCLUDE_YALIBNKF_H_
 #define INCLUDE_YALIBNKF_H_
 
@@ -40,40 +40,72 @@ Changes.
   yalibnkf
   Based on Python Interface to NKF
   Licensed under MIT (New BSD) License
-  2014, snipsnipsnip <snipsnipsnip@users.sourceforge.jp>
+  2014-2015, snipsnipsnip <snipsnipsnip@users.sourceforge.jp>
 */
+
+/* define YALIBNKF_DLL to use DLL */
+#ifndef YALIBNKF_API
+#  ifdef YALIBNKF_DLL
+#    ifdef YALIBNKF_BUILDING
+/* We are building this library */
+#      define YALIBNKF_API __declspec(dllexport)
+#    else
+/* We are using this library */
+#      define YALIBNKF_API __declspec(dllimport)
+#    endif
+#  else
+#    define YALIBNKF_API
+#  endif
+#endif
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 /**
- * Performs conversion on string str of strlen bytes with NKF.
- * Specify option with string opts.
+ * NUL-terminated string with length.
+ * str may include more than one '\0' bytes before the end.
+ * str may be NULL on failure.
+ */
+typedef struct yalibnkf_str
+{
+  char *str;
+  size_t len;
+}
+yalibnkf_str;
+
+/**
+ * Performs kanji-code conversion on string str of strlen bytes with NKF.
+ * Specify NKF option with string opts.
+ * This function allocates the string dynamically.
  * You must free returned string with yalibnkf_free().
- * Returns NULL on error.
+ * Returns { 0, 0 } on error.
  * Thread unsafe.
 */
-const unsigned char *
-yalibnkf_convert(unsigned char* str, int strlen, unsigned char* opts);
+YALIBNKF_API
+yalibnkf_str
+yalibnkf_convert(const char *opts, const char *str, size_t strlen);
 
 /**
  * Guess encoding of string str of strlen bytes with NKF.
- * You must not free returned string.
+ * Returns a static constant string.
  * Thread unsafe.
 */
+YALIBNKF_API
 const char *
-yalibnkf_guess(unsigned char* str, int strlen);
+yalibnkf_guess(const char *str, size_t strlen);
 
 /**
  * Frees string returned from yalibnkf_convert().
  */
+YALIBNKF_API
 void
-yalibnkf_free(const char *str);
+yalibnkf_free(struct yalibnkf_str result);
 
 /**
  * Returns version.
  */
+YALIBNKF_API
 const char *
 yalibnkf_version(void);
 
@@ -83,51 +115,39 @@ yalibnkf_version(void);
 
 #endif /* !defined(INCLUDE_YALIBNKF_H_) */
 /* amalgamator.py: "yalibnkf.h" end */
-/* amalgamator.py: line 32..95 of "yalibnkf.c" */
+/* amalgamator.py: line 32..85 of "yalibnkf.c" */
 
 
 #undef getc
-#undef ungetc
-#define getc(f)         yalibnkf_getc(f)         
-#define ungetc(c,f)     yalibnkf_ungetc(c,f)
+#define getc(f)         yalibnkf_getc(f)
 
 #undef putchar
 #undef TRUE
 #undef FALSE
 #define putchar(c)      yalibnkf_putchar(c)
 
-static int yalibnkf_ibufsize, yalibnkf_obufsize;
-static unsigned char *yalibnkf_inbuf, *yalibnkf_outbuf;
-static int yalibnkf_icount,yalibnkf_ocount;
-static unsigned char *yalibnkf_iptr, *yalibnkf_optr;
+static size_t yalibnkf_ibufsize, yalibnkf_obufsize;
+static const char *yalibnkf_inbuf;
+static char *yalibnkf_outbuf;
+static size_t yalibnkf_icount,yalibnkf_ocount;
+static char *yalibnkf_optr;
 static jmp_buf env;
 static int yalibnkf_guess_flag;
+static size_t yalibnkf_writecount;
 
-static int 
+static int
 yalibnkf_getc(FILE *f)
 {
   unsigned char c;
   if (yalibnkf_icount >= yalibnkf_ibufsize) return EOF;
-  c = *yalibnkf_iptr++;
+  c = yalibnkf_inbuf[yalibnkf_icount];
   yalibnkf_icount++;
   return (int)c;
-}
-
-static int 
-yalibnkf_ungetc(int c, FILE *f)
-{
-  if (yalibnkf_icount--){
-    *(--yalibnkf_iptr) = (unsigned char)c;
-    return c;
-  }else{ return EOF; }
 }
 
 static void
 yalibnkf_putchar(int c)
 {
-  size_t size;
-  unsigned char *p;
-
   if (yalibnkf_guess_flag) {
     return;
   }
@@ -135,9 +155,9 @@ yalibnkf_putchar(int c)
   if (yalibnkf_ocount--){
     *yalibnkf_optr++ = (unsigned char)c;
   }else{
-    size = yalibnkf_obufsize + yalibnkf_obufsize;
-    p = (unsigned char *)realloc(yalibnkf_outbuf, size + 1);
-    if (yalibnkf_outbuf == NULL){ longjmp(env, 1); }
+    size_t size = yalibnkf_obufsize + yalibnkf_obufsize;
+    char *p = (char *)realloc(yalibnkf_outbuf, size + 1);
+    if (p == NULL){ longjmp(env, 1); }
     yalibnkf_outbuf = p;
     yalibnkf_optr = yalibnkf_outbuf + yalibnkf_obufsize;
     yalibnkf_ocount = yalibnkf_obufsize;
@@ -145,9 +165,11 @@ yalibnkf_putchar(int c)
     *yalibnkf_optr++ = (unsigned char)c;
     yalibnkf_ocount--;
   }
+  yalibnkf_writecount++;
 }
 
 #define PERL_XS 1
+#define DEFAULT_CODE_JIS
 /* amalgamator.py: "nkf\utf8tbl.c" begin */
 /* amalgamator.py: line 1..5 of "nkf\utf8tbl.c" */
 /*
@@ -22426,57 +22448,94 @@ main(int argc, char **argv)
 }
 #endif /* WIN32DLL */
 /* amalgamator.py: "nkf\nkf.c" end */
-/* amalgamator.py: line 97..169 of "yalibnkf.c" */
+/* amalgamator.py: line 87..196 of "yalibnkf.c" */
 
 
-const unsigned char *
-yalibnkf_convert(unsigned char* str, int strlen, unsigned char* opts)
+/**
+ * Split opts with space character and feed to nkf's option().
+ * We need to handle space-delimited option one by one since nkf's handling
+ * seems buggy.
+ */
+static int load_nkf_options(const char *opts)
 {
-  const unsigned char *ret;
+  size_t len = strlen(opts);
+  unsigned char *optchunk = (unsigned char *)malloc(len + 1);
+  size_t i = 0;
 
-  if (yalibnkf_outbuf != NULL) {
-    return NULL;
+  if (optchunk == NULL) {
+    return -1;
   }
 
-  yalibnkf_ibufsize = strlen + 1;
+  while (i < len) {
+    size_t skip = strcspn(&opts[i], " ");
+
+    if (skip > 0) {
+      memcpy(optchunk, &opts[i], skip);
+      optchunk[skip] = '\0';
+
+      if (options(optchunk) != 0) {
+        free(optchunk);
+        return -1;
+      }
+    }
+    i += skip + strspn(&opts[i + skip], " ");
+  }
+
+  free(optchunk);
+
+  return 0;
+}
+
+struct yalibnkf_str
+yalibnkf_convert(const char *opts, const char *str, size_t strlen)
+{
+  struct yalibnkf_str ret;
+  ret.len = 0;
+  ret.str = NULL;
+
+  if (yalibnkf_outbuf != NULL) {
+    return ret;
+  }
+
+  yalibnkf_ibufsize = strlen;
   yalibnkf_obufsize = yalibnkf_ibufsize * 3 / 2 + 256;
-  yalibnkf_outbuf = (unsigned char *)malloc(yalibnkf_obufsize);
+  yalibnkf_outbuf = (char *)malloc(yalibnkf_obufsize);
   if (yalibnkf_outbuf == NULL){
-    return NULL;
+    return ret;
   }
   yalibnkf_outbuf[0] = '\0';
   yalibnkf_ocount = yalibnkf_obufsize;
   yalibnkf_optr = yalibnkf_outbuf;
   yalibnkf_icount = 0;
+  yalibnkf_writecount = 0;
   yalibnkf_inbuf  = str;
-  yalibnkf_iptr = yalibnkf_inbuf;
   yalibnkf_guess_flag = 0;
 
   if (setjmp(env) == 0){
     reinit();
-    options(opts);
 
-    kanji_convert(NULL);
-
+    if (load_nkf_options(opts) != 0 || kanji_convert(NULL) != 0) {
+      return ret;
+    }
   }else{
     free(yalibnkf_outbuf);
-    return NULL;
+    return ret;
   }
 
-  *yalibnkf_optr = 0;
-  ret = yalibnkf_outbuf;
+  ret.len = yalibnkf_writecount;
+  ret.str = yalibnkf_outbuf;
+
   yalibnkf_outbuf = NULL;
 
   return ret;
 }
 
 const char *
-yalibnkf_guess(unsigned char* str, int strlen)
+yalibnkf_guess(const char *str, size_t strlen)
 {
-  yalibnkf_ibufsize = strlen + 1;
+  yalibnkf_ibufsize = strlen;
   yalibnkf_icount = 0;
   yalibnkf_inbuf  = str;
-  yalibnkf_iptr = yalibnkf_inbuf;
 
   yalibnkf_guess_flag = 1;
   reinit();
@@ -22488,15 +22547,15 @@ yalibnkf_guess(unsigned char* str, int strlen)
 }
 
 void
-yalibnkf_free(const char *str)
+yalibnkf_free(struct yalibnkf_str result)
 {
-    free((void *)str);
+  free((void *)result.str);
 }
 
 const char *
 yalibnkf_version(void)
 {
-    return "yalibnkf 0.0.0 based on Network Kanji Filter Version "
-      NKF_VERSION " (" NKF_RELEASE_DATE ") \n" COPY_RIGHT;
+  return "yalibnkf 0.0.0 based on Network Kanji Filter Version "
+    NKF_VERSION " (" NKF_RELEASE_DATE ") \n" COPY_RIGHT;
 }
 /* amalgamator.py: "yalibnkf.c" end */
