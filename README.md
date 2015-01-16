@@ -1,6 +1,8 @@
 yalibnkf
 ========
 
+[![Build Status](https://travis-ci.org/snipsnipsnip/yalibnkf.svg?branch=master)](https://travis-ci.org/snipsnipsnip/yalibnkf)
+
 Yet Another wrapper LIBrary for [NKF]( http://sourceforge.jp/projects/nkf/ ): yet another kanji code converter which ''converts input kanji code to designated kanji code such as ISO-2022-JP, Shift_JIS, EUC-JP, UTF-8, UTF-16 or UTF-32."
 
 C言語のプログラムに組み込むための薄い[NKF]( http://sourceforge.jp/projects/nkf/ )のラッパーです。nkfを使うのと同様のオプションを指定して使えます。
