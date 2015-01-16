@@ -1,0 +1,15 @@
+language: cpp
+
+script:
+  - cd cmake
+  - cmake -G 'Unix Makefiles'
+  - cmake --build .
+  - ctest -V
+
+before_install:
+  - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+  - sudo apt-get update -qq
+
+install:
+  - sudo apt-get install -qq g++-4.8 libipc-run3-perl libfile-slurp-perl
+  - export CXX=g++-4.8
