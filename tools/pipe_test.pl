@@ -12,7 +12,7 @@ sub main {
   my $test_cases = $ARGV[1] or die "usage: $0 yankf.exe test_cases.inc\n\nRuns nkf test, generated from convert_nkf_test.pl, using pipelines.\n";
 
   my @cases = load_test_cases($test_cases);
-  my $error_count;
+  my $error_count = 0;
 
   for (@cases) {
     if (run_test($yankf, $_)) {
@@ -72,7 +72,7 @@ sub load_test_cases {
 sub run_test {
   my ($yankf, $bundle) = @_;
 
-  printf "%-40s", $_ for @{$bundle->{description}};
+  print join "\n", map { sprintf "%-40s", $_ } @{$bundle->{description}};
 
   for my $case (@{$bundle->{tests}}) {
     my $tolerant = $case->{options} =~ /-\w+m[NS]/;
