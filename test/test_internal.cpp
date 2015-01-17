@@ -37,6 +37,7 @@ public:
     {
         yalibnkf_str result = yalibnkf_convert(nkf_option_, input_.c_str(), input_.size());
         std::string actual { result.str, result.len };
+        yalibnkf_free(result);
 
         return { matches_answer(actual), answers_, actual };
     }
