@@ -49,6 +49,7 @@ int main(int argc, char **argv)
   }
   
   yalibnkf_free(result);
+  yalibnkf_quit();
   
   return 0;
 }

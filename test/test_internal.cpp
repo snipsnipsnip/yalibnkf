@@ -37,6 +37,7 @@ public:
     {
         yalibnkf_str result = yalibnkf_convert(nkf_option_, input_.c_str(), input_.size());
         std::string actual { result.str, result.len };
+        yalibnkf_free(result);
 
         return { matches_answer(actual), answers_, actual };
     }
@@ -293,17 +294,17 @@ int main(int argc, char **argv)
         TestRunner test { TestLoader().load(), { &argv[1], &argv[argc] } };
         test.run();
 
+        yalibnkf_quit();
+
         int error_count = test.error_count();
 
         if (error_count > 1)
         {
             printf("%d errors were found.\n", error_count);
-            return 1;
         }
         else if (error_count == 1)
         {
             printf("1 error was found.\n");
-            return 1;
         }
         else
         {
@@ -314,11 +315,13 @@ int main(int argc, char **argv)
     catch (const std::exception &e)
     {
         printf("Test has failed with exception: %s\n", e.what());
-        return 1;
     }
     catch (...)
     {
         printf("Test has failed with some error.\n");
-        return 1;
     }
+    
+    yalibnkf_quit();
+    
+    return 1;
 }
