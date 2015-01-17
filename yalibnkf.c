@@ -191,6 +191,9 @@ void
 yalibnkf_quit(void)
 {
   if (nkf_state != NULL) {
+    free(nkf_state->std_gc_buf->ptr);
+    free(nkf_state->broken_buf->ptr);
+    free(nkf_state->nfc_buf->ptr);
     free(nkf_state->std_gc_buf);
     free(nkf_state->broken_buf);
     free(nkf_state->nfc_buf);
