@@ -68,6 +68,13 @@ void
 yalibnkf_free(struct yalibnkf_str result);
 
 /**
+ * Frees internal working memory.
+ */
+YALIBNKF_API
+void
+yalibnkf_quit(void);
+
+/**
  * Returns version.
  */
 YALIBNKF_API
