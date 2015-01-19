@@ -1,6 +1,8 @@
 yalibnkf
 ========
 
+[![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/snipsnipsnip/yalibnkf?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 [![Build Status](https://travis-ci.org/snipsnipsnip/yalibnkf.svg?branch=master)](https://travis-ci.org/snipsnipsnip/yalibnkf)
 
 Yet Another wrapper LIBrary for [NKF]( http://sourceforge.jp/projects/nkf/ ): yet another kanji code converter which ''converts input kanji code to designated kanji code such as ISO-2022-JP, Shift_JIS, EUC-JP, UTF-8, UTF-16 or UTF-32."
