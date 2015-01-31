@@ -42,11 +42,11 @@ yalibnkf_str;
 /**
  * Performs kanji-code conversion on string str of strlen bytes with NKF.
  * Specify NKF option with string opts.
- * This function allocates the string dynamically.
- * You must free returned string with yalibnkf_free().
+ * This function dynamically allocates the string to return.
+ * You must free the result with yalibnkf_free().
  * Returns { 0, 0 } on error.
  * Thread unsafe.
-*/
+ */
 YALIBNKF_API
 yalibnkf_str
 yalibnkf_convert(const char *opts, const char *str, size_t strlen);

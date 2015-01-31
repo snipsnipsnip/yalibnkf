@@ -87,9 +87,9 @@ yalibnkf_putchar(int c)
 #include "nkf/nkf.c"
 
 /**
- * Split opts with space character and feed to nkf's option().
- * We need to handle space-delimited option one by one since nkf's handling
- * seems buggy.
+ * Feed to nkf's option() after split with space characters.
+ * We need to pass one by one since it seems that nkf handles space-delimited
+ * option incorrectly.
  */
 static int load_nkf_options(const char *opts)
 {
