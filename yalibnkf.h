@@ -40,6 +40,11 @@ typedef struct yalibnkf_str
 yalibnkf_str;
 
 /**
+ * Custom output. Expected to behave like putchar(), but EOF.
+ */
+typedef void (*yalibnkf_putchar_t)(int c);
+
+/**
  * Performs kanji-code conversion on string str of strlen bytes with NKF.
  * Specify NKF option with string opts.
  * This function dynamically allocates the string to return.
@@ -50,6 +55,17 @@ yalibnkf_str;
 YALIBNKF_API
 yalibnkf_str
 yalibnkf_convert(const char *opts, const char *str, size_t strlen);
+
+/**
+ * Performs kanji-code conversion on string str of strlen bytes with NKF.
+ * Specify NKF option with string opts.
+ * out will be called repeatedly during conversion.
+ * Returns 0 on error. Returns 1 otherwise.
+ * Thread unsafe.
+ */
+YALIBNKF_API
+int
+yalibnkf_convert_fun(const char *opts, const char *str, size_t strlen, yalibnkf_putchar_t out);
 
 /**
  * Guess encoding of string str of strlen bytes with NKF.

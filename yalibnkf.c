@@ -34,10 +34,8 @@ Changes.
 #undef getc
 #define getc(f)         yalibnkf_getc(f)
 
-#undef putchar
 #undef TRUE
 #undef FALSE
-#define putchar(c)      yalibnkf_putchar(c)
 
 static size_t yalibnkf_ibufsize, yalibnkf_obufsize;
 static const char *yalibnkf_inbuf;
@@ -59,9 +57,9 @@ yalibnkf_getc(FILE *f)
 }
 
 static void
-yalibnkf_putchar(int c)
+yalibnkf_putchar_dynamic(int c)
 {
-  if (yalibnkf_guess_flag) {
+  if (yalibnkf_guess_flag || c == EOF) {
     return;
   }
 
@@ -128,41 +126,39 @@ yalibnkf_convert(const char *opts, const char *str, size_t strlen)
   ret.len = 0;
   ret.str = NULL;
 
-  if (yalibnkf_outbuf != NULL) {
-    return ret;
-  }
-
-  yalibnkf_ibufsize = strlen;
   yalibnkf_obufsize = yalibnkf_ibufsize * 3 / 2 + 256;
   yalibnkf_outbuf = (char *)malloc(yalibnkf_obufsize);
-  if (yalibnkf_outbuf == NULL){
+  if (yalibnkf_outbuf == NULL) {
     return ret;
   }
   yalibnkf_outbuf[0] = '\0';
   yalibnkf_ocount = yalibnkf_obufsize;
   yalibnkf_optr = yalibnkf_outbuf;
-  yalibnkf_icount = 0;
   yalibnkf_writecount = 0;
-  yalibnkf_inbuf  = str;
-  yalibnkf_guess_flag = 0;
 
-  if (setjmp(env) == 0){
-    reinit();
-
-    if (load_nkf_options(opts) != 0 || kanji_convert(NULL) != 0) {
-      return ret;
-    }
+  if (setjmp(env) == 0 && yalibnkf_convert_fun(opts, str, strlen, yalibnkf_putchar_dynamic)) {
+    ret.len = yalibnkf_writecount;
+    ret.str = yalibnkf_outbuf;
   }else{
     free(yalibnkf_outbuf);
-    return ret;
   }
-
-  ret.len = yalibnkf_writecount;
-  ret.str = yalibnkf_outbuf;
 
   yalibnkf_outbuf = NULL;
 
   return ret;
+}
+
+int yalibnkf_convert_fun(const char *opts, const char *str, size_t strlen, yalibnkf_putchar_t out)
+{
+  yalibnkf_inbuf  = str;
+  yalibnkf_guess_flag = 0;
+  yalibnkf_ibufsize = strlen;
+  yalibnkf_icount = 0;
+
+  reinit();
+  o_putc = out;
+
+  return load_nkf_options(opts) == 0 && kanji_convert(NULL) == 0;
 }
 
 const char *
@@ -174,6 +170,7 @@ yalibnkf_guess(const char *str, size_t strlen)
 
   yalibnkf_guess_flag = 1;
   reinit();
+  o_putc = yalibnkf_putchar_dynamic;
   guess_f = 1;
 
   kanji_convert(NULL);
