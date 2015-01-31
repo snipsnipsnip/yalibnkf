@@ -3,6 +3,7 @@
 #include <ctype.h>
 #include <vector>
 #include <string>
+#include <sstream>
 #include <algorithm>
 #include "yalibnkf.h"
 
@@ -15,16 +16,18 @@ struct TestResult
 
 class TestCase
 {
-    const char *nkf_option_;
+    std::string nkf_option_;
     std::string input_;
     std::vector<std::string> answers_;
+    bool tolerant_;
 
 public:
     TestCase(const char *nkf_option, const std::string &input, const std::vector<std::string> &answers)
       :
       nkf_option_(nkf_option),
       input_(input),
-      answers_(answers)
+      answers_(answers),
+      tolerant_(need_to_ignore_spaces(nkf_option))
     {
     }
 
@@ -35,26 +38,38 @@ public:
 
     TestResult run() const
     {
-        yalibnkf_str result = yalibnkf_convert(nkf_option_, input_.c_str(), input_.size());
-        std::string actual { result.str, result.len };
-        yalibnkf_free(result);
+        std::vector<std::string> options { split(nkf_option_) };
+        std::sort(options.begin(), options.end());
 
-        return { matches_answer(actual), answers_, actual };
+        do
+        {
+            std::string option { join(options) };
+
+            yalibnkf_str result = yalibnkf_convert(option.c_str(), input_.c_str(), input_.size());
+            std::string actual { result.str, result.len };
+            yalibnkf_free(result);
+
+            if (!matches_answer(actual))
+            {
+                return { false, answers_, actual };
+            }
+        }
+        while (std::next_permutation(options.begin(), options.end()));
+
+        return { true, {}, {} };
     }
 
 private:
     bool matches_answer(std::string actual) const
     {
-        bool tolerant = need_to_ignore_spaces(nkf_option_);
-
-        if (tolerant)
+        if (tolerant_)
         {
             strip(&actual);
         }
 
-        return std::any_of(answers_.begin(), answers_.end(), [=](std::string answer)
+        return std::any_of(answers_.begin(), answers_.end(), [&](std::string answer)
         {
-            if (tolerant)
+            if (tolerant_)
             {
                 strip(&answer);
             }
@@ -84,6 +99,41 @@ private:
     static void strip(std::string *s)
     {
         s->erase(std::remove_if(s->begin(), s->end(), [](char c) { return c == ' '; }), s->end());
+    }
+
+    static std::vector<std::string> split(const std::string &s)
+    {
+        std::istringstream ss { s };
+        std::vector<std::string> splat;
+        std::string word;
+
+        while (std::getline(ss, word, ' '))
+        {
+            if (!word.empty())
+            {
+                splat.push_back(std::move(word));
+                word.clear();
+            }
+        }
+
+        return splat;
+    }
+
+    static std::string join(const std::vector<std::string> &words)
+    {
+        std::ostringstream ss;
+
+        for (auto i = words.begin(); i != words.end(); ++i)
+        {
+            if (i != words.begin())
+            {
+                ss << ' ';
+            }
+
+            ss << *i;
+        }
+
+        return ss.str();
     }
 };
 
@@ -119,13 +169,13 @@ public:
         for (auto i = cases_.begin(); i != cases_.end(); ++i)
         {
             TestResult result = i->run();
-            
+
             if (!result.ok)
             {
                 return result;
             }
         }
-        
+
         return {true, {{"<shouldn't be printed>"}}, {"<shouldn't be printed>"}};
     }
 
@@ -320,8 +370,8 @@ int main(int argc, char **argv)
     {
         printf("Test has failed with some error.\n");
     }
-    
+
     yalibnkf_quit();
-    
+
     return 1;
 }
