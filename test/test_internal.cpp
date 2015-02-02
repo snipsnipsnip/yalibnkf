@@ -77,7 +77,7 @@ public:
             
             if (g_testing_putchar_buf != actual)
             {
-                return { false, {"yalibnkf_convert don't agree with yalibnkf_convert_fun"}, answers_, actual };
+                return { false, {"yalibnkf_convert_fun don't agree with yalibnkf_convert"}, answers_, actual };
             }
         }
         while (std::next_permutation(options.begin(), options.end()));
@@ -174,17 +174,17 @@ public:
         return description_;
     }
 
-    void set_description(const std::vector<std::string> &desc)
+    void set_description(std::vector<std::string> &&desc)
     {
-        description_.assign(desc.begin(), desc.end());
+        description_ = desc;
     }
 
-    void add_input(const char *nkf_option, const std::string &input)
+    void add_input(const char *nkf_option, std::string &&input)
     {
         cases_.emplace_back(TestCase { nkf_option, input, {} });
     }
 
-    void add_answer(const std::string &answer)
+    void add_answer(std::string &&answer)
     {
         ensure(!cases_.empty());
         cases_.back().add_answer(answer);
