@@ -25,16 +25,18 @@ Sqliteのamalgamationみたいなことをするツール。
                      ↓ traverse and join
     '...,,,<hoge.implの内容>,,,...'
 
+>>> try: Amalgamator.from_argv(("amalgamator.py", "-h")).run()
+... except SystemExit: pass
 usage: amalgamator.py [-h] [-o FILE] [-v] [-I DIR] [-w GLOB] [-b GLOB]
                       [-e NAME] [-E NAME] [-c] [-V]
                       FILE [FILE ...]
-
+<BLANKLINE>
 Recursively and partially preprocess some of the #include directives in a C
 source file.
-
+<BLANKLINE>
 positional arguments:
   FILE                  input file(s) to preprocess
-
+<BLANKLINE>
 optional arguments:
   -h, --help            show this help message and exit
   -o FILE, --out FILE   Output file
@@ -47,7 +49,7 @@ optional arguments:
   -b GLOB, --blacklist GLOB
                         denied #include files which won't be expanded. Note
                         that you need to specify the real file path. Specify
-                        like -b '/**/stdio.h' -b '**/stdio.h' to deny all <stdio.h>
+                        like -b '**/stdio.h' to deny all <stdio.h>
   -e NAME, --input-encoding NAME
                         possible source file encoding(s). Defaults to utf-8
   -E NAME, --output-encoding NAME
@@ -66,13 +68,28 @@ import os.path
 import re
 import sys
 
-VERSION = '0.0.0'
+VERSION = '0.1.0'
 DEFAULT_ENCODING = 'utf-8'
 LOG = logging.getLogger('konkohki')
 LOG.setLevel(logging.CRITICAL)
-
+LOG.addHandler(logging.StreamHandler(codecs.getwriter(DEFAULT_ENCODING)(sys.stderr)))
 
 def set_logger_verbosity(verbosity):
+    """
+    Sets log level of amalgamator.LOG.
+
+    >>> set_logger_verbosity(0); LOG.getEffectiveLevel() == logging.ERROR
+    True
+    >>> set_logger_verbosity(1); LOG.getEffectiveLevel() == logging.WARNING
+    True
+    >>> set_logger_verbosity(2); LOG.getEffectiveLevel() == logging.INFO
+    True
+    >>> set_logger_verbosity(3); LOG.getEffectiveLevel() == logging.DEBUG
+    True
+    >>> set_logger_verbosity(4); LOG.getEffectiveLevel() == logging.DEBUG
+    True
+    """
+
     if verbosity == 0:
         LOG.setLevel(logging.ERROR)
     elif verbosity == 1:
@@ -84,28 +101,68 @@ def set_logger_verbosity(verbosity):
 
 
 class IndentFilter(logging.Filter):
-    def __init__(self):
+    """
+    Adds indentation to log messages.
+
+    >>> log = logging.getLogger("test")
+    >>> log.addHandler(logging.StreamHandler(sys.stdout))
+    >>> log.warn("foo")
+    foo
+    >>> with IndentFilter(log): log.warn("foo")
+      foo
+    >>> log.warn("foo")
+    foo
+    >>> with IndentFilter(log):
+    ...   with IndentFilter(log): log.warn("foo")
+        foo
+    >>> log.warn("foo")
+    foo
+    """
+
+    def __init__(self, logger):
+        """
+        >>> log = logging.getLogger("test")
+        >>> filter = IndentFilter(log)
+        >>> filter.indent
+        0
+        >>> filter.logger == log
+        True
+        """
+
         self.indent = 0
+        self.logger = logger
 
     def filter(self, record):
-        record.msg = "  " * self.indent + record.msg
+        record.msg = "  " + record.msg
         return True
 
     def __enter__(self):
-        self.indent += 1
+        self.logger.addFilter(self)
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.indent -= 1
-
-
-INDENT = IndentFilter()
-LOG.addHandler(logging.StreamHandler(codecs.getwriter(DEFAULT_ENCODING)(sys.stderr)))
-LOG.addFilter(INDENT)
+        self.logger.removeFilter(self)
 
 
 class SourceDir(object):
-    """Represents source directories.
+    """
+    Represents source directories.
     Handles stuff around #include search path, whitelist, and blacklist.
+
+    >>> path = os.path.abspath(__file__)
+    >>> name = os.path.basename(path)
+    >>> dir = os.path.dirname(path)
+    >>> srcdir = SourceDir([dir], ['utf_8'], [], [])
+    >>> srcdir.find_file(name, '.') is not None
+    True
+    >>> srcdir.find_file('some_nonexistent_file', '.') is None
+    True
+    >>> srcdir = SourceDir([dir], ['utf_8'], [], [])
+    >>> srcdir.find_file('some_nonexistent_file', '.') is None
+    True
+    >>> isinstance(srcdir.find_file(name, '.'), SourceFile)
+    True
+    >>> srcdir.find_file(name, '.').path == name
+    True
     """
 
     def __init__(self, dirs, source_encodings, whitelist, blacklist):
@@ -133,8 +190,8 @@ class SourceDir(object):
     def _resolve_source_path(self, path, included_from):
         """Search file that matches path.
         The file path where the directive is from does matter.
-        Retur None if it's not found, not in the whitelist, or in the blacklist.
-        Retur the content of the file otherwise.
+        Return None if it's not found, not in the whitelist, or in the blacklist.
+        Return the content of the file otherwise.
         """
 
         existing = self._find_from_dirs(path, included_from)
@@ -149,16 +206,16 @@ class SourceDir(object):
 
     def _find_from_dirs(self, path, included_from):
         """List candidates for #included file path."""
-        
+
         dirs = [os.path.dirname(included_from)] + self.dirs
         candidates = [os.path.join(d, path) for d in dirs]
         existing = [c for c in candidates if os.path.exists(c) and self._is_allowed_in_list(c)]
-        
+
         return existing
 
     def _is_allowed_in_list(self, path):
         """Return True if path is allowed in both whitelist and blacklist."""
-        
+
         if self.whitelist and not self._is_in_list(path, self.whitelist):
             LOG.info('"%s" is not in the whitelist', path)
             return False
@@ -170,7 +227,7 @@ class SourceDir(object):
 
     def _is_in_list(self, path, list):
         """Return True if path matches in any glob in list."""
-        
+
         return any(fnmatch.fnmatch(path, glob) for glob in list)
 
     def _read_content(self, path):
@@ -202,7 +259,7 @@ class SourceFile(object):
 
         state = self._init_state()
 
-        with INDENT:
+        with IndentFilter(LOG):
             for match in self.INCLUDE_RE.finditer(self.content):
                 state = self._preprocess_include(match, out, srcdir, need_comment, state)
 
@@ -212,12 +269,12 @@ class SourceFile(object):
 
     def _init_state(self):
         """Return initial parameters to pass around in _preprocess_*() subroutines."""
-        
+
         return 0, 1
 
     def _preprocess_include(self, match, out, srcdir, need_comment, state):
-        """Process a #include directive captured by SourceFile.INCLUDE_RE regexp."""
-        
+        """Process an #include directive captured by SourceFile.INCLUDE_RE regexp."""
+
         prev_end, line = state
 
         included = match.group(1)
@@ -243,7 +300,7 @@ class SourceFile(object):
 
     def _preprocess_tail(self, out, srcdir, need_comment, state):
         """Print the rest of the file after all #includes."""
-        
+
         prev_end, line = state
 
         part = self.content[prev_end:]
@@ -259,10 +316,11 @@ class SourceFile(object):
 
     def _log_marker(self, out, need_comment, message, *args):
         """Log message to output file and/or logger."""
-        
+
         msg = message % args
         LOG.info(msg)
-        out.write('/* amalgamator.py: %s */\n' % msg)
+        if need_comment:
+            out.write('/* amalgamator.py: %s */\n' % msg)
 
 
 class Amalgamator(object):
@@ -271,7 +329,7 @@ class Amalgamator(object):
     @classmethod
     def from_argv(cls, argv):
         """Return an Amalgamator configured with argv."""
-        
+
         parser = cls._make_parser(argv)
         self = Amalgamator()
 
