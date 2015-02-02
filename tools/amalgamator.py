@@ -231,6 +231,7 @@ class SourceFile(object):
 
         if part != "\n":
             self._log_marker(out, need_comment, 'line %s..%s of "%s"', line, line + newlines - 1, self.path)
+            self._mark_line(out, line)
         out.write(part)
 
         spliced.preprocess(out, srcdir, need_comment)
@@ -250,15 +251,18 @@ class SourceFile(object):
 
         if part != "\n":
             self._log_marker(out, need_comment, 'line %s..%s of "%s"', line, line + newlines, self.path)
+            self._mark_line(out, line)
         out.write(part)
+
+    def _mark_line(self, out, line):
+        out.write('#line %d "%s"\n' % (line, self.path.replace(os.path.sep, '/')))
 
     def _log_marker(self, out, need_comment, message, *args):
         """Log message to output file and/or logger."""
         
         msg = message % args
         LOG.info(msg)
-        if need_comment:
-            out.write('/* amalgamator.py: %s */\n' % msg)
+        out.write('/* amalgamator.py: %s */\n' % msg)
 
 
 class Amalgamator(object):
