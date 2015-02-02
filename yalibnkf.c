@@ -34,8 +34,10 @@ Changes.
 #undef getc
 #define getc(f)         yalibnkf_getc(f)
 
+#undef putchar
 #undef TRUE
 #undef FALSE
+#define putchar(c)      yalibnkf_putchar(c)
 
 static size_t yalibnkf_ibufsize, yalibnkf_obufsize;
 static const char *yalibnkf_inbuf;
@@ -45,6 +47,7 @@ static char *yalibnkf_optr;
 static jmp_buf env;
 static int yalibnkf_guess_flag;
 static size_t yalibnkf_writecount;
+static yalibnkf_putchar_t yalibnkf_putchar;
 
 static int
 yalibnkf_getc(FILE *f)
@@ -59,7 +62,7 @@ yalibnkf_getc(FILE *f)
 static void
 yalibnkf_putchar_dynamic(int c)
 {
-  if (yalibnkf_guess_flag || c == EOF) {
+  if (yalibnkf_guess_flag) {
     return;
   }
 
@@ -154,9 +157,9 @@ int yalibnkf_convert_fun(const char *opts, const char *str, size_t strlen, yalib
   yalibnkf_guess_flag = 0;
   yalibnkf_ibufsize = strlen;
   yalibnkf_icount = 0;
+  yalibnkf_putchar = out;
 
   reinit();
-  o_putc = out;
 
   return load_nkf_options(opts) == 0 && kanji_convert(NULL) == 0;
 }
