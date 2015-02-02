@@ -40,7 +40,7 @@ typedef struct yalibnkf_str
 yalibnkf_str;
 
 /**
- * Custom output. Expected to behave like putchar(), but EOF.
+ * Custom output. Expected to behave like putchar().
  */
 typedef void (*yalibnkf_putchar_t)(int c);
 
