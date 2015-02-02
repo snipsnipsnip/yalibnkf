@@ -10,9 +10,23 @@
 struct TestResult
 {
     bool ok;
+    std::string what;
     std::vector<std::string> expected;
     std::string actual;
 };
+
+static std::string g_testing_putchar_buf;
+
+extern "C" static void testing_putchar(int c)
+{
+    try
+    {
+        g_testing_putchar_buf += (unsigned char)c;
+    }
+    catch (...)
+    {
+    }
+}
 
 class TestCase
 {
@@ -51,12 +65,24 @@ public:
 
             if (!matches_answer(actual))
             {
-                return { false, answers_, actual };
+                return { false, {"yalibnkf_convert"}, answers_, actual };
+            }
+            
+            g_testing_putchar_buf.clear();
+
+            if (!yalibnkf_convert_fun(option.c_str(), input_.c_str(), input_.size(), testing_putchar))
+            {
+                return { false, {"yalibnkf_convert_fun failed"}, answers_, actual };
+            }
+            
+            if (g_testing_putchar_buf != actual)
+            {
+                return { false, {"yalibnkf_convert don't agree with yalibnkf_convert_fun"}, answers_, actual };
             }
         }
         while (std::next_permutation(options.begin(), options.end()));
 
-        return { true, {}, {} };
+        return { true, {}, {}, {} };
     }
 
 private:
@@ -176,7 +202,7 @@ public:
             }
         }
 
-        return {true, {{"<shouldn't be printed>"}}, {"<shouldn't be printed>"}};
+        return {true, {}, {}, {}};
     }
 
 private:
@@ -295,7 +321,7 @@ private:
         }
         else
         {
-            printf("Fail\n  expected: ");
+            printf("Fail\n  what: %s\n  expected: ", result.what.c_str());
             for (auto i = result.expected.begin(); i != result.expected.end(); ++i)
             {
                 if (i != result.expected.begin())
