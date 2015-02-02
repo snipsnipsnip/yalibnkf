@@ -42,8 +42,7 @@ Changes.
 static size_t yalibnkf_ibufsize, yalibnkf_obufsize;
 static const char *yalibnkf_inbuf;
 static char *yalibnkf_outbuf;
-static size_t yalibnkf_icount,yalibnkf_ocount;
-static char *yalibnkf_optr;
+static size_t yalibnkf_icount;
 static jmp_buf env;
 static int yalibnkf_guess_flag;
 static size_t yalibnkf_writecount;
@@ -66,19 +65,14 @@ yalibnkf_putchar_dynamic(int c)
     return;
   }
 
-  if (yalibnkf_ocount--){
-    *yalibnkf_optr++ = (unsigned char)c;
-  }else{
+  if (yalibnkf_writecount >= yalibnkf_obufsize){
     size_t size = yalibnkf_obufsize + yalibnkf_obufsize;
     char *p = (char *)realloc(yalibnkf_outbuf, size + 1);
     if (p == NULL){ longjmp(env, 1); }
     yalibnkf_outbuf = p;
-    yalibnkf_optr = yalibnkf_outbuf + yalibnkf_obufsize;
-    yalibnkf_ocount = yalibnkf_obufsize;
     yalibnkf_obufsize = size;
-    *yalibnkf_optr++ = (unsigned char)c;
-    yalibnkf_ocount--;
   }
+  yalibnkf_outbuf[yalibnkf_writecount] = (unsigned char)c;
   yalibnkf_writecount++;
 }
 
@@ -131,12 +125,10 @@ yalibnkf_convert(const char *opts, const char *str, size_t strlen)
 
   yalibnkf_obufsize = yalibnkf_ibufsize * 3 / 2 + 256;
   yalibnkf_outbuf = (char *)malloc(yalibnkf_obufsize);
-  if (yalibnkf_outbuf == NULL) {
+  if (yalibnkf_outbuf == NULL){
     return ret;
   }
   yalibnkf_outbuf[0] = '\0';
-  yalibnkf_ocount = yalibnkf_obufsize;
-  yalibnkf_optr = yalibnkf_outbuf;
   yalibnkf_writecount = 0;
 
   if (setjmp(env) == 0 && yalibnkf_convert_fun(opts, str, strlen, yalibnkf_putchar_dynamic)) {
