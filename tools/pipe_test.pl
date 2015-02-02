@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use File::Slurp;
 use IPC::Run3;
+use Algorithm::Permute;
 
 main() if __FILE__ eq $0;
 
@@ -76,12 +77,16 @@ sub run_test {
 
   for my $case (@{$bundle->{tests}}) {
     my $tolerant = $case->{options} =~ /-\w+m[NS]/;
-    my ($out, $err) = run_nkf($yankf, $case->{options}, $case->{input});
+    my $p = Algorithm::Permute->new([split(/\s+/, $case->{options})]);
+    
+    while (my @opts = $p->next) {
+      my ($out, $err) = run_nkf($yankf, join(' ', @opts), $case->{input});
 
-    warn "nkf warned: $err\n" if $err;
+      warn "nkf warned: $err\n" if $err;
 
-    unless (equal($tolerant, $case->{answers}, $out)) {
-      return 0;
+      unless (equal($tolerant, $case->{answers}, $out)) {
+        return 0;
+      }
     }
   }
 
