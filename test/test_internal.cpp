@@ -70,7 +70,7 @@ public:
             
             g_testing_putchar_buf.clear();
 
-            if (!yalibnkf_convert_fun(option.c_str(), input_.c_str(), input_.size(), testing_putchar))
+            if (!yalibnkf_print(option.c_str(), input_.c_str(), input_.size(), testing_putchar))
             {
                 return { false, {"yalibnkf_convert_fun failed"}, answers_, actual };
             }

@@ -126,7 +126,7 @@ yalibnkf_convert(const char *opts, const char *str, size_t strlen)
   yalibnkf_outbuf[0] = '\0';
   yalibnkf_writecount = 0;
 
-  if (setjmp(env) == 0 && yalibnkf_convert_fun(opts, str, strlen, yalibnkf_putchar_dynamic)) {
+  if (setjmp(env) == 0 && yalibnkf_print(opts, str, strlen, yalibnkf_putchar_dynamic)) {
     ret.len = yalibnkf_writecount;
     ret.str = yalibnkf_outbuf;
   }else{
@@ -138,7 +138,7 @@ yalibnkf_convert(const char *opts, const char *str, size_t strlen)
   return ret;
 }
 
-int yalibnkf_convert_fun(const char *opts, const char *str, size_t strlen, yalibnkf_putchar_t out)
+int yalibnkf_print(const char *opts, const char *str, size_t strlen, yalibnkf_putchar_t out)
 {
   yalibnkf_inbuf  = str;
   yalibnkf_ibufsize = strlen;
@@ -156,9 +156,9 @@ yalibnkf_guess(const char *str, size_t strlen)
   yalibnkf_ibufsize = strlen;
   yalibnkf_icount = 0;
   yalibnkf_inbuf  = str;
+  yalibnkf_putchar = no_putc;
 
   reinit();
-  o_putc = no_putc;
   guess_f = 1;
 
   kanji_convert(NULL);

@@ -65,7 +65,7 @@ yalibnkf_convert(const char *opts, const char *str, size_t strlen);
  */
 YALIBNKF_API
 int
-yalibnkf_convert_fun(const char *opts, const char *str, size_t strlen, yalibnkf_putchar_t out);
+yalibnkf_print(const char *opts, const char *str, size_t strlen, yalibnkf_putchar_t out);
 
 /**
  * Guess encoding of string str of strlen bytes with NKF.
