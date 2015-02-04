@@ -44,7 +44,6 @@ static const char *yalibnkf_inbuf;
 static char *yalibnkf_outbuf;
 static size_t yalibnkf_icount;
 static jmp_buf env;
-static int yalibnkf_guess_flag;
 static size_t yalibnkf_writecount;
 static yalibnkf_putchar_t yalibnkf_putchar;
 
@@ -61,10 +60,6 @@ yalibnkf_getc(FILE *f)
 static void
 yalibnkf_putchar_dynamic(int c)
 {
-  if (yalibnkf_guess_flag) {
-    return;
-  }
-
   if (yalibnkf_writecount >= yalibnkf_obufsize){
     size_t size = yalibnkf_obufsize + yalibnkf_obufsize;
     char *p = (char *)realloc(yalibnkf_outbuf, size + 1);
@@ -146,7 +141,6 @@ yalibnkf_convert(const char *opts, const char *str, size_t strlen)
 int yalibnkf_convert_fun(const char *opts, const char *str, size_t strlen, yalibnkf_putchar_t out)
 {
   yalibnkf_inbuf  = str;
-  yalibnkf_guess_flag = 0;
   yalibnkf_ibufsize = strlen;
   yalibnkf_icount = 0;
   yalibnkf_putchar = out;
@@ -163,9 +157,8 @@ yalibnkf_guess(const char *str, size_t strlen)
   yalibnkf_icount = 0;
   yalibnkf_inbuf  = str;
 
-  yalibnkf_guess_flag = 1;
   reinit();
-  o_putc = yalibnkf_putchar_dynamic;
+  o_putc = no_putc;
   guess_f = 1;
 
   kanji_convert(NULL);
