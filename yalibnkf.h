@@ -70,6 +70,30 @@ int
 yalibnkf_print_with(const char *opts, const char *str, size_t strlen, yalibnkf_putchar_t out);
 
 /**
+ * Performs kanji-code conversion on string str of strlen bytes with NKF.
+ * without any output, just counting.
+ * Used to determine the length needed for yalibnkf_write.
+ * Specify NKF option with string opts.
+ * Returns SIZE_MAX on error. Returns byte count of output otherwise.
+ * Thread unsafe.
+ */
+YALIBNKF_API
+size_t
+yalibnkf_count(const char *opts, const char *str, size_t strlen);
+
+/**
+ * Performs kanji-code conversion on string str of strlen bytes with NKF.
+ * and output through specified custom function.
+ * Used to determine the length needed for yalibnkf_write.
+ * Specify NKF option with string opts.
+ * Returns SIZE_MAX on error. Returns byte count of output otherwise.
+ * Thread unsafe.
+ */
+YALIBNKF_API
+size_t
+yalibnkf_write(const char *opts, const char *str, size_t strlen, char *dst, size_t dstlen);
+
+/**
  * Guess encoding of string str of strlen bytes with NKF.
  * Returns a static constant string.
  * Thread unsafe.

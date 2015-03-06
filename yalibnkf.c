@@ -71,6 +71,23 @@ yalibnkf_putchar_dynamic(int c)
   yalibnkf_writecount++;
 }
 
+static void
+yalibnkf_putchar_count(int c)
+{
+  (void)c;
+  yalibnkf_writecount++;
+}
+
+static void
+yalibnkf_putchar_fixed(int c)
+{
+  if (yalibnkf_writecount >= yalibnkf_obufsize){
+    longjmp(env, 1);
+  }
+  yalibnkf_outbuf[yalibnkf_writecount] = (unsigned char)c;
+  yalibnkf_writecount++;
+}
+
 #define PERL_XS 1
 #define DEFAULT_CODE_JIS
 #include "nkf/utf8tbl.c"
@@ -136,6 +153,34 @@ yalibnkf_convert(const char *opts, const char *str, size_t strlen)
   yalibnkf_outbuf = NULL;
 
   return ret;
+}
+
+size_t yalibnkf_count(const char *opts, const char *str, size_t strlen)
+{
+  yalibnkf_outbuf = NULL;
+  yalibnkf_obufsize = 0;
+  yalibnkf_writecount = 0;
+
+  if (!yalibnkf_print_with(opts, str, strlen, yalibnkf_putchar_count)) {
+    yalibnkf_writecount = SIZE_MAX;
+  }
+  
+  return yalibnkf_writecount;
+}
+
+size_t yalibnkf_write(const char *opts, const char *str, size_t strlen, char *dst, size_t dstlen)
+{
+  yalibnkf_outbuf = dst;
+  yalibnkf_obufsize = dstlen;
+  yalibnkf_writecount = 0;
+
+  if (setjmp(env) == 0) {
+    if (!yalibnkf_print_with(opts, str, strlen, yalibnkf_putchar_fixed)) {
+      yalibnkf_writecount = SIZE_MAX;
+    }
+  }
+
+  return yalibnkf_writecount;
 }
 
 int yalibnkf_print_with(const char *opts, const char *str, size_t strlen, yalibnkf_putchar_t out)
