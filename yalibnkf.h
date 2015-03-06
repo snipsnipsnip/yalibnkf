@@ -45,7 +45,8 @@ yalibnkf_str;
 typedef void (*yalibnkf_putchar_t)(int c);
 
 /**
- * Performs kanji-code conversion on string str of strlen bytes with NKF.
+ * Performs kanji-code conversion on string str of strlen bytes with NKF
+ * and output to allocated string.
  * Specify NKF option with string opts.
  * This function dynamically allocates the string to return.
  * You must free the result with yalibnkf_free().
@@ -57,7 +58,8 @@ yalibnkf_str
 yalibnkf_convert(const char *opts, const char *str, size_t strlen);
 
 /**
- * Performs kanji-code conversion on string str of strlen bytes with NKF.
+ * Performs kanji-code conversion on string str of strlen bytes with NKF
+ * and output through specified custom function.
  * Specify NKF option with string opts.
  * out will be called repeatedly during conversion.
  * Returns 0 on error. Returns 1 otherwise.
@@ -65,7 +67,7 @@ yalibnkf_convert(const char *opts, const char *str, size_t strlen);
  */
 YALIBNKF_API
 int
-yalibnkf_print(const char *opts, const char *str, size_t strlen, yalibnkf_putchar_t out);
+yalibnkf_print_with(const char *opts, const char *str, size_t strlen, yalibnkf_putchar_t out);
 
 /**
  * Guess encoding of string str of strlen bytes with NKF.
