@@ -29,6 +29,7 @@ Changes.
 #include <setjmp.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdint.h>
 #include "yalibnkf.h"
 
 #undef getc
