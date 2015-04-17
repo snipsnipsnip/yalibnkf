@@ -17,7 +17,7 @@ struct TestResult
 
 static std::string g_testing_putchar_buf;
 
-extern "C" static void testing_putchar(int c)
+extern "C" void testing_putchar(int c)
 {
     try
     {
