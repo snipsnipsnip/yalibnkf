@@ -79,6 +79,22 @@ public:
             {
                 return{false, {"yalibnkf_convert_fun don't agree with yalibnkf_convert"}, answers_, actual};
             }
+
+            if (actual.size() != yalibnkf_count(option.c_str(), input_.c_str(), input_.size()))
+            {
+                return{false, {"yalibnkf_count don't agree with yalibnkf_convert"}, answers_, actual};
+            }
+
+            std::vector<char> buf(actual.size());
+            if (actual.size() != yalibnkf_write(option.c_str(), input_.c_str(), input_.size(), &buf[0], buf.size()))
+            {
+                return{false, {"yalibnkf_write failed"}, answers_, actual};
+            }
+
+            if (!std::equal(buf.begin(), buf.end(), actual.begin()))
+            {
+                return{false, {"yalibnkf_write don't agree with yalibnkf_convert"}, answers_, actual};
+            }
         }
         while (std::next_permutation(options.begin(), options.end()));
 
