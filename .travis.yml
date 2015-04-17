@@ -11,5 +11,5 @@ before_install:
   - sudo apt-get update -qq
 
 install:
-  - sudo apt-get install -qq g++-4.8 libipc-run3-perl libfile-slurp-perl
+  - sudo apt-get install -qq g++-4.8 libipc-run3-perl libfile-slurp-perl libalgorithm-permute-perl
   - export CXX=g++-4.8
