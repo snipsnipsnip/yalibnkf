@@ -37,11 +37,11 @@ class TestCase
 
 public:
     TestCase(const char *nkf_option, const std::string &input, const std::vector<std::string> &answers)
-      :
-      nkf_option_(nkf_option),
-      input_(input),
-      answers_(answers),
-      tolerant_(need_to_ignore_spaces(nkf_option))
+        :
+        nkf_option_(nkf_option),
+        input_(input),
+        answers_(answers),
+        tolerant_(need_to_ignore_spaces(nkf_option))
     {
     }
 
@@ -52,37 +52,37 @@ public:
 
     TestResult run() const
     {
-        std::vector<std::string> options { split(nkf_option_) };
+        std::vector<std::string> options{split(nkf_option_)};
         std::sort(options.begin(), options.end());
 
         do
         {
-            std::string option { join(options) };
+            std::string option{join(options)};
 
             yalibnkf_str result = yalibnkf_convert(option.c_str(), input_.c_str(), input_.size());
-            std::string actual { result.str, result.len };
+            std::string actual{result.str, result.len};
             yalibnkf_free(result);
 
             if (!matches_answer(actual))
             {
-                return { false, {"yalibnkf_convert"}, answers_, actual };
+                return{false, {"yalibnkf_convert"}, answers_, actual};
             }
-            
+
             g_testing_putchar_buf.clear();
 
             if (!yalibnkf_print_with(option.c_str(), input_.c_str(), input_.size(), testing_putchar))
             {
-                return { false, {"yalibnkf_print_with failed"}, answers_, actual };
+                return{false, {"yalibnkf_print_with failed"}, answers_, actual};
             }
-            
+
             if (g_testing_putchar_buf != actual)
             {
-                return { false, {"yalibnkf_convert_fun don't agree with yalibnkf_convert"}, answers_, actual };
+                return{false, {"yalibnkf_convert_fun don't agree with yalibnkf_convert"}, answers_, actual};
             }
         }
         while (std::next_permutation(options.begin(), options.end()));
 
-        return { true, {}, {}, {} };
+        return{true, {}, {}, {}};
     }
 
 private:
@@ -129,7 +129,7 @@ private:
 
     static std::vector<std::string> split(const std::string &s)
     {
-        std::istringstream ss { s };
+        std::istringstream ss{s};
         std::vector<std::string> splat;
         std::string word;
 
@@ -181,7 +181,7 @@ public:
 
     void add_input(const char *nkf_option, std::string &&input)
     {
-        cases_.emplace_back(TestCase { nkf_option, input, {} });
+        cases_.emplace_back(TestCase{nkf_option, input, {}});
     }
 
     void add_answer(std::string &&answer)
@@ -202,7 +202,7 @@ public:
             }
         }
 
-        return {true, {}, {}, {}};
+        return{true, {}, {}, {}};
     }
 
 private:
@@ -272,10 +272,10 @@ class TestRunner
 
 public:
     TestRunner(const Test &test, const std::vector<std::string> &labels)
-      :
-      error_count_(0),
-      test_(test),
-      labels_(labels)
+        :
+        error_count_(0),
+        test_(test),
+        labels_(labels)
     {
     }
 
@@ -367,7 +367,7 @@ int main(int argc, char **argv)
 {
     try
     {
-        TestRunner test { TestLoader().load(), { &argv[1], &argv[argc] } };
+        TestRunner test{TestLoader().load(), {&argv[1], &argv[argc]}};
         test.run();
 
         yalibnkf_quit();
